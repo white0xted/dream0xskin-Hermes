@@ -1,0 +1,28 @@
+{
+  "appearance" : "dark",
+  "art" : {
+    "focusX" : "50%",
+    "focusY" : "35%",
+    "safeArea" : "72%",
+    "taskMode" : "dim"
+  },
+  "brandSubtitle" : "ADA SOFA",
+  "colors" : {
+    "accent" : "#ec963d",
+    "accentAlt" : "#c17b32",
+    "background" : "#080706",
+    "highlight" : "#ec963d",
+    "line" : "rgba(236, 150, 61, .18)",
+    "muted" : "#545352",
+    "panel" : "#100e0d",
+    "panelAlt" : "#171615",
+    "secondary" : "#262524",
+    "text" : "#e8e6e0"
+  },
+  "id" : "ada-sofa",
+  "image" : "ada-sofa.png",
+  "name" : "ada sofa",
+  "quote" : "",
+  "schemaVersion" : 1,
+  "tagline" : ""
+}

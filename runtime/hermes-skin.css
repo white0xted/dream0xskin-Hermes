@@ -1,17 +1,72 @@
 /* ============================================================
- * Hermes Skin CSS — Linda (Cold Blue-Grey)
- * 
- * Verified against Hermes Desktop v0.17.0 on 2026-08-04.
- * Overrides --theme-* CSS variables and provides translucent
- * panel effects via backdrop-filter.
- * 
- * Key insight: Hermes sets --theme-* variables on
- * document.documentElement.style via the Ne() function.
- * Our !important rules survive gateway skin.changed events.
+ * Hermes Skin CSS — Codex Design Language
+ *
+ * Architecture ported from dream0xskin (Codex Skin) project:
+ * - --hs-* RGB variable system for alpha composition
+ * - Scrim gradient layers (hero-scrim, task-fade, task-shade)
+ * - Safe-area art positioning (left/right/center/none)
+ * - Immersive mode for wide images
+ * - Panel opacity via rgb(var() / alpha) composition
+ *
+ * Hermes-specific: also overrides --theme-* variables (set by
+ * Hermes gateway via Ne()) with !important for color pipeline.
  * ============================================================ */
 
-/* === Theme variable overrides === */
+/* === Root: theme variables + Hermes --theme-* overrides === */
 html.hermes-skin-active {
+  /* Solid color tokens */
+  --hs-bg: #080b10;
+  --hs-panel: #11151c;
+  --hs-panel-2: #1a1f28;
+  --hs-accent: #7a8b94;
+  --hs-accent-alt: #5a6b74;
+  --hs-secondary: #6a7b84;
+  --hs-highlight: #8a9ba4;
+  --hs-text: #eaf1f5;
+  --hs-muted: #aeb8bf;
+  --hs-line: rgba(122, 139, 148, .22);
+
+  /* RGB triples for rgb(var() / alpha) composition */
+  --hs-bg-rgb: 8 11 16;
+  --hs-panel-rgb: 17 21 28;
+  --hs-panel-2-rgb: 26 31 40;
+  --hs-accent-rgb: 122 139 148;
+  --hs-accent-alt-rgb: 90 107 116;
+  --hs-secondary-rgb: 106 123 132;
+  --hs-highlight-rgb: 138 155 164;
+  --hs-text-rgb: 234 241 245;
+  --hs-muted-rgb: 174 184 191;
+
+  /* Art positioning (set by renderer from image analysis) */
+  --hs-focus-x: 50%;
+  --hs-focus-y: 50%;
+  --hs-art-position: 50% 50%;
+
+  /* Scrim gradients — composable readability layers */
+  --hs-hero-scrim: linear-gradient(90deg,
+    rgb(var(--hs-bg-rgb) / .90) 0%,
+    rgb(var(--hs-bg-rgb) / .76) 50%,
+    rgb(var(--hs-bg-rgb) / .18) 84%,
+    transparent 100%);
+  --hs-task-fade: linear-gradient(180deg,
+    rgb(var(--hs-bg-rgb) / .10) 0%,
+    rgb(var(--hs-bg-rgb) / .18) 32%,
+    rgb(var(--hs-bg-rgb) / .76) 68%,
+    rgb(var(--hs-bg-rgb) / 1) 100%);
+  --hs-task-shade: linear-gradient(90deg,
+    rgb(var(--hs-bg-rgb) / .56) 0%,
+    rgb(var(--hs-bg-rgb) / .36) 48%,
+    rgb(var(--hs-bg-rgb) / .12) 100%);
+
+  /* Immersive mode panel opacity (for wide images) */
+  --hs-immersive-edge: rgb(var(--hs-bg-rgb) / .82);
+  --hs-immersive-mid: rgb(var(--hs-bg-rgb) / .50);
+  --hs-immersive-far: rgb(var(--hs-bg-rgb) / .20);
+  --hs-immersive-sidebar: rgb(var(--hs-panel-rgb) / .72);
+  --hs-immersive-composer: rgb(var(--hs-panel-2-rgb) / .88);
+  --hs-immersive-line: rgb(var(--hs-muted-rgb) / .42);
+
+  /* === Hermes --theme-* variable overrides === */
   --theme-background-seed: #080b10 !important;
   --theme-foreground: #eaf1f5 !important;
   --theme-primary: #7a8b94 !important;
@@ -22,9 +77,9 @@ html.hermes-skin-active {
   --theme-sidebar-seed: transparent !important;
   --theme-card-seed: transparent !important;
   --theme-elevated-seed: transparent !important;
-  --theme-bubble-seed: rgba(17, 21, 28, 0.6) !important;
+  --theme-bubble-seed: rgb(var(--hs-panel-rgb) / .82) !important;
 
-  /* Mix percentages — set to 0% so seeds pass through directly */
+  /* Mix percentages — 0% so seeds pass through directly */
   --theme-mix-chrome: 0% !important;
   --theme-mix-card: 0% !important;
   --theme-mix-elevated: 0% !important;
@@ -40,23 +95,47 @@ html.hermes-skin-active {
   background-color: transparent !important;
 }
 
-/* === Body: elevate above background overlay === */
+/* === Safe-area: left === */
+html.hermes-skin-active[data-hs-art-safe="left"] {
+  --hs-art-position: 100% var(--hs-focus-y);
+}
+
+/* === Safe-area: right === */
+html.hermes-skin-active[data-hs-art-safe="right"] {
+  --hs-art-position: 0% var(--hs-focus-y);
+  --hs-hero-scrim: linear-gradient(270deg,
+    rgb(var(--hs-bg-rgb) / .90) 0%,
+    rgb(var(--hs-bg-rgb) / .76) 50%,
+    rgb(var(--hs-bg-rgb) / .18) 84%,
+    transparent 100%);
+  --hs-task-shade: linear-gradient(270deg,
+    rgb(var(--hs-bg-rgb) / .56) 0%,
+    rgb(var(--hs-bg-rgb) / .36) 48%,
+    rgb(var(--hs-bg-rgb) / .12) 100%);
+}
+
+/* === Safe-area: center === */
+html.hermes-skin-active[data-hs-art-safe="center"] {
+  --hs-hero-scrim: linear-gradient(90deg,
+    transparent 0%,
+    rgb(var(--hs-bg-rgb) / .68) 25%,
+    rgb(var(--hs-bg-rgb) / .82) 50%,
+    rgb(var(--hs-bg-rgb) / .68) 75%,
+    transparent 100%);
+  --hs-task-shade: radial-gradient(ellipse at center,
+    rgb(var(--hs-bg-rgb) / .48) 0%,
+    rgb(var(--hs-bg-rgb) / .30) 52%,
+    rgb(var(--hs-bg-rgb) / .10) 100%);
+}
+
+/* === Body: elevate above background art === */
 html.hermes-skin-active body {
   position: relative;
   z-index: 1;
-  background: transparent !important;
-  color: #eaf1f5 !important;
-}
-
-/* === Background overlay (art layer) === */
-#hermes-skin-root {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse at 70% 30%, rgba(122, 139, 148, 0.12) 0%, transparent 55%),
-    linear-gradient(135deg, #080b10 0%, #11151c 45%, #1a1f28 100%);
+  background-color: transparent !important;
+  color: var(--hs-text) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "PingFang SC", system-ui, sans-serif !important;
 }
 
 /* === All layout containers: transparent === */
@@ -84,47 +163,149 @@ html.hermes-skin-active .group\/sidebar-wrapper {
 
 /* === Sidebar: frosted glass panel === */
 html.hermes-skin-active [data-slot="sidebar"] {
-  background: rgba(17, 21, 28, 0.65) !important;
+  background: rgb(var(--hs-panel-rgb) / .82) !important;
   backdrop-filter: blur(24px) saturate(1.3) !important;
   -webkit-backdrop-filter: blur(24px) saturate(1.3) !important;
-  border-right: 1px solid rgba(122, 139, 148, 0.12) !important;
+  border-right: 1px solid var(--hs-line) !important;
+  color: var(--hs-text) !important;
 }
 
 /* === Composer: frosted glass input === */
 html.hermes-skin-active [data-slot="composer-surface"] {
-  background: rgba(26, 31, 40, 0.55) !important;
+  background: rgb(var(--hs-panel-2-rgb) / .88) !important;
   backdrop-filter: blur(20px) saturate(1.2) !important;
   -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
-  border: 1px solid rgba(122, 139, 148, 0.18) !important;
-  border-radius: 10px !important;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid rgb(var(--hs-muted-rgb) / .18) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 28px rgb(var(--hs-bg-rgb) / .24) !important;
+  color: var(--hs-text) !important;
 }
 
 /* === Title bar: subtle frosted === */
-html.hermes-skin-active .relative.h-\[34px\] {
-  background: rgba(10, 13, 18, 0.4) !important;
+html.hermes-skin-active .relative.h-\\[34px\\] {
+  background: rgb(var(--hs-bg-rgb) / .82) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid var(--hs-line) !important;
 }
 
-/* === Text color adjustments === */
+/* === Text adjustments === */
 html.hermes-skin-active [data-slot="composer-rich-input"] {
-  color: #eaf1f5 !important;
+  color: var(--hs-text) !important;
+  caret-color: var(--hs-accent) !important;
 }
 
 html.hermes-skin-active [data-slot="composer-rich-input"]::placeholder {
-  color: rgba(174, 184, 191, 0.5) !important;
+  color: rgb(var(--hs-muted-rgb) / .82) !important;
 }
 
 /* === Sidebar menu items === */
 html.hermes-skin-active [data-slot="sidebar-menu-item"] {
-  color: rgba(234, 241, 245, 0.7) !important;
+  color: rgb(var(--hs-text-rgb) / .70) !important;
+  transition: background-color .18s cubic-bezier(.22,1,.36,1),
+    color .18s cubic-bezier(.22,1,.36,1) !important;
 }
 
 html.hermes-skin-active [data-slot="sidebar-menu-item"]:hover,
 html.hermes-skin-active [data-slot="sidebar-menu-item"][data-active="true"] {
-  background: rgba(122, 139, 148, 0.12) !important;
-  color: #eaf1f5 !important;
+  background: rgb(var(--hs-accent-rgb) / .12) !important;
+  color: var(--hs-text) !important;
+}
+
+html.hermes-skin-active [data-slot="sidebar-menu-item"][data-active="true"] {
+  border: 1px solid rgb(var(--hs-accent-rgb) / .22) !important;
+  box-shadow: 0 4px 16px rgb(var(--hs-bg-rgb) / .12) !important;
+}
+
+/* === Main content area: scrim + art === */
+html.hermes-skin-active [data-slot="composer-bounds"] {
+  position: relative !important;
+  isolation: isolate;
+  overflow: hidden !important;
+}
+
+html.hermes-skin-active:not([data-hs-art-wide="true"])
+  [data-slot="composer-bounds"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--hs-task-fade), var(--hs-task-shade), var(--hs-art);
+  background-repeat: no-repeat;
+  background-position: center, center, var(--hs-art-position);
+  background-size: 100% 100%, 100% 100%, cover;
+  opacity: .78;
+}
+
+html.hermes-skin-active:not([data-hs-art-wide="true"])
+  [data-slot="composer-bounds"] > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* === Thread viewport: transparent to show art === */
+html.hermes-skin-active [data-slot="aui_thread-viewport"],
+html.hermes-skin-active [data-slot="aui_thread-content"] {
+  background: transparent !important;
+}
+
+html.hermes-skin-active [data-slot="aui_thread-content"] {
+  color: var(--hs-text) !important;
+}
+
+/* === Immersive mode: wide image as full body background === */
+html.hermes-skin-active[data-hs-art-wide="true"] body {
+  background-image: var(--hs-art) !important;
+  background-position: var(--hs-art-position) !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+}
+
+html.hermes-skin-active[data-hs-art-wide="true"] [data-slot="sidebar"] {
+  background: linear-gradient(90deg,
+    var(--hs-immersive-sidebar),
+    var(--hs-immersive-edge) 100%) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(20px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+}
+
+html.hermes-skin-active[data-hs-art-wide="true"]
+  [data-slot="composer-bounds"]::before {
+  content: none;
+}
+
+html.hermes-skin-active[data-hs-art-wide="true"]
+  [data-slot="composer-bounds"] {
+  background: linear-gradient(90deg,
+    var(--hs-immersive-edge),
+    var(--hs-immersive-mid) 64%,
+    var(--hs-immersive-far)) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html.hermes-skin-active[data-hs-art-wide="true"]
+  [data-slot="composer-surface"] {
+  background: var(--hs-immersive-composer) !important;
+  border: 0 !important;
+  box-shadow:
+    0 10px 30px rgb(var(--hs-bg-rgb) / .20),
+    inset 0 0 0 1px var(--hs-immersive-line),
+    inset 0 1px rgb(var(--hs-text-rgb) / .12) !important;
+  backdrop-filter: blur(16px) saturate(1.1) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.1) !important;
+}
+
+/* === Markdown text shadow for readability over art === */
+html.hermes-skin-active[data-hs-art-wide="true"]
+  [data-slot="aui_thread-content"] {
+  text-shadow:
+    0 1px 2px rgb(var(--hs-bg-rgb) / .82),
+    0 0 10px rgb(var(--hs-bg-rgb) / .46);
 }
 
 /* === Scrollbar styling === */
@@ -134,12 +315,12 @@ html.hermes-skin-active ::-webkit-scrollbar {
 }
 
 html.hermes-skin-active ::-webkit-scrollbar-thumb {
-  background: rgba(122, 139, 148, 0.25);
+  background: rgb(var(--hs-accent-rgb) / .38);
   border-radius: 3px;
 }
 
 html.hermes-skin-active ::-webkit-scrollbar-thumb:hover {
-  background: rgba(122, 139, 148, 0.4);
+  background: rgb(var(--hs-accent-rgb) / .50);
 }
 
 html.hermes-skin-active ::-webkit-scrollbar-track {
@@ -149,22 +330,25 @@ html.hermes-skin-active ::-webkit-scrollbar-track {
 /* === User message bubble === */
 html.hermes-skin-active [data-slot="aui_thread-content"] [class*="bubble"],
 html.hermes-skin-active [data-slot="aui_thread-content"] [class*="user"] {
-  background: rgba(17, 21, 28, 0.75) !important;
-  border: 1px solid rgba(122, 139, 148, 0.1) !important;
-  border-radius: 12px !important;
+  background: rgb(var(--hs-panel-rgb) / .88) !important;
+  border: 1px solid rgb(var(--hs-muted-rgb) / .12) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 24px rgb(var(--hs-bg-rgb) / .10) !important;
+  backdrop-filter: blur(7px) saturate(1.05) !important;
 }
 
 /* === Code blocks === */
 html.hermes-skin-active pre,
 html.hermes-skin-active [class*="code-block"],
 html.hermes-skin-active [class*="CodeBlock"] {
-  background: rgba(8, 11, 16, 0.7) !important;
-  border: 1px solid rgba(122, 139, 148, 0.1) !important;
+  background: rgb(var(--hs-bg-rgb) / .85) !important;
+  border: 1px solid rgb(var(--hs-muted-rgb) / .12) !important;
   border-radius: 8px !important;
 }
 
 /* === Links === */
 html.hermes-skin-active a {
+  color: rgb(var(--hs-accent-rgb)) !important;
   color: #9ab4c0 !important;
 }
 
@@ -175,19 +359,34 @@ html.hermes-skin-active a:hover {
 /* === Buttons === */
 html.hermes-skin-active button[class*="primary"],
 html.hermes-skin-active [data-slot="button"][data-variant="primary"] {
-  background: rgba(122, 139, 148, 0.2) !important;
-  border: 1px solid rgba(122, 139, 148, 0.3) !important;
-  color: #eaf1f5 !important;
+  background: var(--hs-accent) !important;
+  color: rgb(var(--hs-bg-rgb)) !important;
+  box-shadow: 0 5px 14px rgb(var(--hs-accent-rgb) / .20) !important;
 }
 
 html.hermes-skin-active button[class*="primary"]:hover,
 html.hermes-skin-active [data-slot="button"][data-variant="primary"]:hover {
-  background: rgba(122, 139, 148, 0.3) !important;
+  background: var(--hs-accent-alt) !important;
+}
+
+/* === ProseMirror / rich text editor === */
+html.hermes-skin-active .ProseMirror {
+  color: var(--hs-text) !important;
+  caret-color: var(--hs-accent) !important;
+}
+
+/* === Accessibility: reduced motion === */
+@media (prefers-reduced-motion: reduce) {
+  html.hermes-skin-active *,
+  html.hermes-skin-active *::before,
+  html.hermes-skin-active *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
 }
 
 /* === Backdrop-filter fallback ===
- * If GPU compositing is unavailable (e.g. probe instance with
- * throwaway --user-data-dir), backdrop-filter may not produce
- * visible blur. The rgba() backgrounds above provide a usable
- * fallback — panels are semi-transparent even without blur.
- */
+ * If GPU compositing is unavailable, the rgb(var() / alpha)
+ * backgrounds provide usable fallback — panels are semi-opaque
+ * even without blur. */

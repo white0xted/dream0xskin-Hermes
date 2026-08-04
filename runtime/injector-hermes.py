@@ -187,17 +187,26 @@ async def connect_target(target: dict) -> CDPSession:
 # ─── Injection Logic ─────────────────────────────────────────
 
 def build_renderer_script(css_text: str, art_data_url, theme: dict, selectors: dict) -> str:
-    """Build the renderer injection script as a single JS expression."""
-    # Escape CSS for embedding in JS template literal
+    """Build the renderer injection script as a single JS expression.
+
+    Implements the codex skin architecture:
+    - Art analysis engine (downsample to 96px, brightness, saliency, accent via hue binning)
+    - Theme variable system (--hs-* solid + --hs-*-rgb triples on documentElement)
+    - Scrim layer system (hero-scrim, task-fade, task-shade composable gradients)
+    - Immersive mode for wide images (ratio >= 1.75)
+    - Safe-area positioning (left/right/center/none)
+    - Blob URL for art image (preferred over data URL for large images)
+    - SPA self-healing (MutationObserver + periodic scan)
+    - Gateway interference defense (Hermes gateway re-applies --theme-* vars)
+    """
     css_escaped = json.dumps(css_text)
     art_escaped = json.dumps(art_data_url) if art_data_url else "null"
     theme_escaped = json.dumps(theme)
     selectors_escaped = json.dumps(selectors)
 
-    return f"""
-(() => {{
+    return f"""(() => {{
   const CSS_TEXT = {css_escaped};
-  const ART_URL = {art_escaped};
+  const ART_DATA_URL = {art_escaped};
   const THEME = {theme_escaped};
   const SELECTORS = {selectors_escaped};
   const STATE_KEY = "{STATE_KEY}";
@@ -206,128 +215,504 @@ def build_renderer_script(css_text: str, art_data_url, theme: dict, selectors: d
   const ACTIVE_CLASS = "{ACTIVE_CLASS}";
   const VERSION = "{SKIN_VERSION}";
 
-  // Clean up any previous injection
+  // ─── Constants ─────────────────────────────────────────────
+  const ROOT_ATTRS = [
+    "data-hs-art-wide", "data-hs-art-safe", "data-hs-task-mode",
+    "data-hs-art-safe-area", "data-hs-art-task-mode", "data-hs-art-aspect",
+    "data-hs-art-ready",
+  ];
+  const THEME_VARIABLES = [
+    "--hs-bg", "--hs-panel", "--hs-panel-2", "--hs-accent", "--hs-accent-alt",
+    "--hs-secondary", "--hs-highlight", "--hs-text", "--hs-muted", "--hs-line",
+    "--hs-bg-rgb", "--hs-panel-rgb", "--hs-panel-2-rgb", "--hs-accent-rgb",
+    "--hs-accent-alt-rgb", "--hs-secondary-rgb", "--hs-highlight-rgb",
+    "--hs-text-rgb", "--hs-muted-rgb",
+    "--hs-art", "--hs-focus-x", "--hs-focus-y", "--hs-art-position",
+    "--hs-hero-scrim", "--hs-task-fade", "--hs-task-shade",
+    "--hs-immersive-edge", "--hs-immersive-mid", "--hs-immersive-far",
+    "--hs-immersive-sidebar", "--hs-immersive-composer", "--hs-immersive-line",
+  ];
+  const ART = (THEME.art && typeof THEME.art === "object") ? THEME.art : {{}};
+  const ART_METADATA = (THEME.artMetadata && typeof THEME.artMetadata === "object")
+    ? THEME.artMetadata : null;
+
+  // ─── Cleanup previous injection ────────────────────────────
   const previous = window[STATE_KEY];
   if (typeof previous?.cleanup === "function") previous.cleanup();
   window[STATE_KEY] = null;
 
-  // === 1. Create background overlay ===
-  const existingRoot = document.getElementById(ROOT_ID);
-  if (existingRoot) existingRoot.remove();
-
-  const root = document.createElement('div');
-  root.id = ROOT_ID;
-  root.style.cssText = `
-    position: fixed; inset: 0; z-index: 0;
-    pointer-events: none;
-    ${{ART_URL
-      ? `background-image: url(${{ART_URL}}); background-size: cover; background-position: center;`
-      : `background: radial-gradient(ellipse at 70% 30%, rgba(122,139,148,0.12) 0%, transparent 55%),
-         linear-gradient(135deg, #080b10 0%, #11151c 45%, #1a1f28 100%);`
+  // ─── Blob URL for art image ────────────────────────────────
+  let artUrl = null;
+  if (ART_DATA_URL && typeof ART_DATA_URL === "string" && ART_DATA_URL.indexOf(",") > 0) {{
+    try {{
+      const comma = ART_DATA_URL.indexOf(",");
+      const mime = (/^data:([^;,]+)/.exec(ART_DATA_URL) || [])[1] || "image/png";
+      const binary = atob(ART_DATA_URL.slice(comma + 1));
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+      artUrl = URL.createObjectURL(new Blob([bytes], {{ type: mime }}));
+    }} catch (e) {{
+      artUrl = null;
     }}
-  `;
+  }}
 
-  // === 2. Create style element ===
+  let artAnalysis = null;
+  let analysisTimer = null;
+
+  // ─── Color utilities ───────────────────────────────────────
+  const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+
+  const parseRgb = (value) => {{
+    if (!value || value === "transparent") return null;
+    const hex = String(value).trim().match(/^#([0-9a-f]{{3,4}}|[0-9a-f]{{6}}|[0-9a-f]{{8}})$/i);
+    if (hex) {{
+      const rgbHex = hex[1].length <= 4
+        ? hex[1].slice(0, 3).split("").map((d) => d + d).join("")
+        : hex[1].slice(0, 6);
+      const n = Number.parseInt(rgbHex, 16);
+      return {{ r: n >> 16, g: (n >> 8) & 255, b: n & 255 }};
+    }}
+    const m = String(value).match(/rgba?\\(\\s*([\\d.]+)\\s*,\\s*([\\d.]+)\\s*,\\s*([\\d.]+)/i);
+    if (!m) return null;
+    return {{ r: Number(m[1]), g: Number(m[2]), b: Number(m[3]) }};
+  }};
+
+  const rgbString = (value) => {{
+    const rgb = parseRgb(value);
+    return rgb ? [rgb.r, rgb.g, rgb.b]
+      .map((c) => Math.round(clamp(c, 0, 255)))
+      .join(" ") : null;
+  }};
+
+  const rgbToHex = ({{ r, g, b }}) => "#" + [r, g, b]
+    .map((v) => clamp(Math.round(v), 0, 255).toString(16).padStart(2, "0"))
+    .join("");
+
+  const rgbToHsl = ({{ r, g, b }}) => {{
+    const vals = [r, g, b].map((v) => v / 255);
+    const max = Math.max(...vals), min = Math.min(...vals);
+    const l = (max + min) / 2;
+    if (max === min) return {{ h: 0, s: 0, l }};
+    const d = max - min;
+    const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    let h;
+    if (max === vals[0]) h = (vals[1] - vals[2]) / d + (vals[1] < vals[2] ? 6 : 0);
+    else if (max === vals[1]) h = (vals[2] - vals[0]) / d + 2;
+    else h = (vals[0] - vals[1]) / d + 4;
+    return {{ h: h * 60, s, l }};
+  }};
+
+  const hslToRgb = ({{ h, s, l }}) => {{
+    const hue = (((h % 360) + 360) % 360) / 360;
+    if (s === 0) {{
+      const n = Math.round(l * 255);
+      return {{ r: n, g: n, b: n }};
+    }}
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    const ch = (off) => {{
+      let t = hue + off;
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    }};
+    return {{ r: ch(1/3) * 255, g: ch(0) * 255, b: ch(-1/3) * 255 }};
+  }};
+
+  // ─── Adaptive palette (from art accent or fallback) ────────
+  const makeAdaptivePalette = (sample) => {{
+    const src = sample || {{ r: 108, g: 126, b: 136 }};
+    const hsl = rgbToHsl(src);
+    const hue = hsl.s < 0.12 ? 214 : hsl.h;
+    const sat = clamp(hsl.s, 0.38, 0.72);
+    const accent = hslToRgb({{ h: hue, s: sat, l: 0.66 }});
+    const accentAlt = hslToRgb({{ h: hue + 12, s: sat * 0.82, l: 0.73 }});
+    const secondary = hslToRgb({{ h: hue - 24, s: sat * 0.64, l: 0.62 }});
+    const highlight = hslToRgb({{ h: hue + 24, s: sat * 0.76, l: 0.58 }});
+    const neutral = (l, c = 0.08) => rgbToHex(hslToRgb({{ h: hue, s: c, l }}));
+    return {{
+      background: neutral(0.055, 0.045),
+      panel: neutral(0.085, 0.04),
+      panelAlt: neutral(0.125, 0.05),
+      accent: rgbToHex(accent),
+      accentAlt: rgbToHex(accentAlt),
+      secondary: rgbToHex(secondary),
+      highlight: rgbToHex(highlight),
+      text: neutral(0.93, 0.025),
+      muted: neutral(0.69, 0.03),
+      line: "rgba(" + Math.round(accent.r) + ", " + Math.round(accent.g) + ", " + Math.round(accent.b) + ", .28)",
+    }};
+  }};
+
+  // ─── Style element ─────────────────────────────────────────
   const existingStyle = document.getElementById(STYLE_ID);
   if (existingStyle) existingStyle.remove();
-
-  const style = document.createElement('style');
+  const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = CSS_TEXT;
 
-  // === 3. Apply ===
-  function apply() {{
+  const existingRoot = document.getElementById(ROOT_ID);
+  if (existingRoot) existingRoot.remove();
+
+  // Root div: transparent scrim container (keeps health-check working)
+  const root = document.createElement("div");
+  root.id = ROOT_ID;
+  root.style.cssText = "position:fixed;inset:0;z-index:0;pointer-events:none;";
+
+  // ─── Helpers ───────────────────────────────────────────────
+  const setStyleProperty = (el, name, value) => {{
+    if (el.style.getPropertyValue(name) !== value) {{
+      el.style.setProperty(name, value);
+    }}
+  }};
+  const setAttribute = (el, name, value) => {{
+    const n = String(value);
+    if (el.getAttribute(name) !== n) el.setAttribute(name, n);
+  }};
+
+  // ─── Apply theme variables to documentElement ──────────────
+  const applyTheme = (el) => {{
+    const declared = (THEME.colors && typeof THEME.colors === "object") ? THEME.colors : {{}};
+    const adaptive = makeAdaptivePalette(artAnalysis?.accentRgb);
+    const pick = (name, adaptiveKey) => {{
+      if (typeof declared[name] === "string" && declared[name]) return declared[name];
+      return adaptive[adaptiveKey || name];
+    }};
+
+    const vars = {{
+      "--hs-bg": pick("background"),
+      "--hs-panel": pick("panel"),
+      "--hs-panel-2": pick("panelAlt"),
+      "--hs-accent": pick("accent"),
+      "--hs-accent-alt": pick("accentAlt"),
+      "--hs-secondary": pick("secondary"),
+      "--hs-highlight": pick("highlight"),
+      "--hs-text": pick("text"),
+      "--hs-muted": pick("muted"),
+      "--hs-line": (typeof declared.line === "string" && declared.line) ? declared.line : adaptive.line,
+    }};
+    for (const [k, v] of Object.entries(vars)) {{
+      if (typeof v === "string" && v) setStyleProperty(el, k, v);
+    }}
+
+    // RGB triples for rgb(var() / alpha) composition
+    const rgbVars = {{
+      "--hs-bg-rgb": vars["--hs-bg"],
+      "--hs-panel-rgb": vars["--hs-panel"],
+      "--hs-panel-2-rgb": vars["--hs-panel-2"],
+      "--hs-accent-rgb": vars["--hs-accent"],
+      "--hs-accent-alt-rgb": vars["--hs-accent-alt"],
+      "--hs-secondary-rgb": vars["--hs-secondary"],
+      "--hs-highlight-rgb": vars["--hs-highlight"],
+      "--hs-text-rgb": vars["--hs-text"],
+      "--hs-muted-rgb": vars["--hs-muted"],
+    }};
+    for (const [k, v] of Object.entries(rgbVars)) {{
+      const rgb = rgbString(v);
+      if (rgb) setStyleProperty(el, k, rgb);
+    }}
+
+    // Art URL as CSS variable
+    if (artUrl) setStyleProperty(el, "--hs-art", 'url("' + artUrl + '")');
+
+    // Scrim gradients (composable readability layers)
+    setStyleProperty(el, "--hs-hero-scrim",
+      "linear-gradient(90deg, rgb(var(--hs-bg-rgb) / .90) 0%, rgb(var(--hs-bg-rgb) / .76) 50%, rgb(var(--hs-bg-rgb) / .18) 84%, transparent 100%)");
+    setStyleProperty(el, "--hs-task-fade",
+      "linear-gradient(180deg, rgb(var(--hs-bg-rgb) / .10) 0%, rgb(var(--hs-bg-rgb) / .18) 32%, rgb(var(--hs-bg-rgb) / .76) 68%, rgb(var(--hs-bg-rgb) / 1) 100%)");
+    setStyleProperty(el, "--hs-task-shade",
+      "linear-gradient(90deg, rgb(var(--hs-bg-rgb) / .56) 0%, rgb(var(--hs-bg-rgb) / .36) 48%, rgb(var(--hs-bg-rgb) / .12) 100%)");
+
+    // Immersive mode panel opacity
+    setStyleProperty(el, "--hs-immersive-edge", "rgb(var(--hs-bg-rgb) / .82)");
+    setStyleProperty(el, "--hs-immersive-mid", "rgb(var(--hs-bg-rgb) / .50)");
+    setStyleProperty(el, "--hs-immersive-far", "rgb(var(--hs-bg-rgb) / .20)");
+    setStyleProperty(el, "--hs-immersive-sidebar", "rgb(var(--hs-panel-rgb) / .72)");
+    setStyleProperty(el, "--hs-immersive-composer", "rgb(var(--hs-panel-2-rgb) / .88)");
+    setStyleProperty(el, "--hs-immersive-line", "rgb(var(--hs-muted-rgb) / .42)");
+  }};
+
+  // ─── Apply art metadata (focus, safe-area, immersive) ──────
+  const applyArtMetadata = (el) => {{
+    const profile = artAnalysis || ART_METADATA;
+    const inferredSafe = profile?.safeArea || "center";
+    const safeArea = (ART.safeArea && ART.safeArea !== "auto") ? ART.safeArea : inferredSafe;
+    const canonicalSafe = ["left", "right", "center", "none"].includes(safeArea) ? safeArea : "center";
+    const focusX = (typeof ART.focusX === "number") ? ART.focusX
+      : (profile?.focusX ?? (safeArea === "left" ? 0.72 : safeArea === "right" ? 0.28 : 0.5));
+    const focusY = (typeof ART.focusY === "number") ? ART.focusY : (profile?.focusY ?? 0.5);
+    const taskMode = (ART.taskMode && ART.taskMode !== "auto") ? ART.taskMode : (profile?.taskMode || "ambient");
+    const wide = profile?.wide || false;
+    const aspect = profile?.aspect || "unknown";
+    const fx = (clamp(focusX, 0, 1) * 100).toFixed(2) + "%";
+    const fy = (clamp(focusY, 0, 1) * 100).toFixed(2) + "%";
+
+    setAttribute(el, "data-hs-art-wide", wide ? "true" : "false");
+    setAttribute(el, "data-hs-art-safe", canonicalSafe);
+    setAttribute(el, "data-hs-task-mode", taskMode);
+    setAttribute(el, "data-hs-art-safe-area", safeArea);
+    setAttribute(el, "data-hs-art-task-mode", taskMode);
+    setAttribute(el, "data-hs-art-aspect", aspect);
+    setAttribute(el, "data-hs-art-ready", artAnalysis ? "true" : "false");
+
+    setStyleProperty(el, "--hs-focus-x", fx);
+    setStyleProperty(el, "--hs-focus-y", fy);
+    setStyleProperty(el, "--hs-art-position", fx + " " + fy);
+  }};
+
+  // ─── Art analysis engine ───────────────────────────────────
+  const analyzeArt = () => new Promise((resolve) => {{
+    if (!artUrl || typeof window.Image !== "function") {{ resolve(null); return; }}
+    const image = new window.Image();
+    let settled = false;
+    const finish = (v) => {{
+      if (settled) return;
+      settled = true;
+      if (analysisTimer) {{ clearTimeout(analysisTimer); analysisTimer = null; }}
+      resolve(v);
+    }};
+    analysisTimer = setTimeout(() => finish(null), 6000);
+    image.onerror = () => finish(null);
+    image.onload = () => {{
+      try {{
+        const ratio = image.naturalWidth / image.naturalHeight;
+        if (!Number.isFinite(ratio) || ratio <= 0) throw new Error("bad dims");
+        const maxDim = 96;
+        const w = Math.max(16, Math.round(ratio >= 1 ? maxDim : maxDim * ratio));
+        const h = Math.max(16, Math.round(ratio >= 1 ? maxDim / ratio : maxDim));
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext("2d", {{ willReadFrequently: true }});
+        if (!ctx) throw new Error("no canvas");
+        ctx.drawImage(image, 0, 0, w, h);
+        const data = ctx.getImageData(0, 0, w, h).data;
+        const samples = new Array(w * h);
+        const bins = Array.from({{ length: 24 }}, () => ({{ weight: 0, r: 0, g: 0, b: 0 }}));
+        let lightTotal = 0, count = 0;
+
+        for (let y = 0; y < h; y++) {{
+          for (let x = 0; x < w; x++) {{
+            const o = (y * w + x) * 4;
+            if (data[o + 3] < 32) continue;
+            const rgb = {{ r: data[o], g: data[o + 1], b: data[o + 2] }};
+            const light = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
+            const hsl = rgbToHsl(rgb);
+            samples[y * w + x] = {{ light, saturation: hsl.s }};
+            lightTotal += light;
+            count++;
+            if (hsl.s >= 0.16 && hsl.l >= 0.16 && hsl.l <= 0.86) {{
+              const bin = bins[Math.min(23, Math.floor(hsl.h / 15))];
+              const wt = hsl.s * (1 - Math.abs(hsl.l - 0.52) * 0.85);
+              bin.weight += wt;
+              bin.r += rgb.r * wt;
+              bin.g += rgb.g * wt;
+              bin.b += rgb.b * wt;
+            }}
+          }}
+        }}
+        if (!count) throw new Error("no visible pixels");
+        const brightness = lightTotal / count;
+
+        // Information density for safe-area detection
+        const information = (start, end) => {{
+          let total = 0, totalSq = 0, edges = 0, edgeCount = 0, pixels = 0;
+          for (let y = 0; y < h; y++) {{
+            for (let x = start; x < end; x++) {{
+              const s = samples[y * w + x];
+              if (!s) continue;
+              total += s.light;
+              totalSq += s.light * s.light;
+              pixels++;
+              const prev = x > start ? samples[y * w + x - 1] : null;
+              const above = y > 0 ? samples[(y - 1) * w + x] : null;
+              if (prev) {{ edges += Math.abs(s.light - prev.light); edgeCount++; }}
+              if (above) {{ edges += Math.abs(s.light - above.light); edgeCount++; }}
+            }}
+          }}
+          const mean = pixels ? total / pixels : 0;
+          const variance = pixels ? Math.max(0, totalSq / pixels - mean * mean) : 1;
+          return Math.sqrt(variance) * 0.58 + (edgeCount ? edges / edgeCount : 1) * 0.42;
+        }};
+        const zoneW = Math.max(1, Math.floor(w * 0.38));
+        const leftInfo = information(0, zoneW);
+        const rightInfo = information(w - zoneW, w);
+        let safeArea = "center";
+        if (leftInfo < rightInfo * 0.86) safeArea = "left";
+        else if (rightInfo < leftInfo * 0.86) safeArea = "right";
+
+        // Saliency map for focus point
+        let salTotal = 0, salX = 0, salY = 0;
+        for (let y = 0; y < h; y++) {{
+          for (let x = 0; x < w; x++) {{
+            const s = samples[y * w + x];
+            if (!s) continue;
+            const prev = x > 0 ? samples[y * w + x - 1] : null;
+            const above = y > 0 ? samples[(y - 1) * w + x] : null;
+            const edge = (prev ? Math.abs(s.light - prev.light) : 0) +
+              (above ? Math.abs(s.light - above.light) : 0);
+            const wt = 0.01 + Math.abs(s.light - brightness) * 0.48 +
+              s.saturation * 0.34 + edge * 0.28;
+            salTotal += wt;
+            salX += (x + 0.5) / w * wt;
+            salY += (y + 0.5) / h * wt;
+          }}
+        }}
+        let focusX = salTotal ? salX / salTotal : 0.5;
+        let focusY = salTotal ? salY / salTotal : 0.5;
+        if (safeArea === "left") focusX = Math.max(0.64, focusX);
+        if (safeArea === "right") focusX = Math.min(0.36, focusX);
+        focusX = clamp(focusX, 0.12, 0.88);
+        focusY = clamp(focusY, 0.18, 0.82);
+
+        // Accent color via hue binning
+        const accentBin = bins.reduce((best, c) => c.weight > best.weight ? c : best, bins[0]);
+        const accentRgb = accentBin.weight > 0 ? {{
+          r: accentBin.r / accentBin.weight,
+          g: accentBin.g / accentBin.weight,
+          b: accentBin.b / accentBin.weight,
+        }} : null;
+
+        const aspect = ratio >= 2.25 ? "ultrawide" : ratio >= 1.45 ? "wide"
+          : ratio >= 1.08 ? "landscape" : ratio >= 0.9 ? "square" : "portrait";
+
+        finish({{
+          width: image.naturalWidth,
+          height: image.naturalHeight,
+          ratio,
+          wide: ratio >= 1.75,
+          aspect,
+          brightness,
+          safeArea,
+          focusX,
+          focusY,
+          taskMode: ratio >= 2.25 ? "banner" : "ambient",
+          accentRgb,
+        }});
+      }} catch (e) {{
+        finish(null);
+      }}
+    }};
+    image.src = artUrl;
+  }});
+
+  // ─── Apply root state ──────────────────────────────────────
+  const applyRootState = (el) => {{
     if (!document.getElementById(STYLE_ID)) {{
-      document.head.appendChild(style);
+      (document.head || document.documentElement).appendChild(style);
     }}
     if (!document.getElementById(ROOT_ID)) {{
-      document.body.prepend(root);
+      (document.body || document.documentElement).prepend(root);
     }}
-    document.documentElement.classList.add(ACTIVE_CLASS, 'dark');
-    document.documentElement.setAttribute('data-hermes-mode', 'dark');
+    el.classList.add(ACTIVE_CLASS, "dark");
+    el.setAttribute("data-hermes-mode", "dark");
+    applyTheme(el);
+    applyArtMetadata(el);
+    // Body transparent + elevated (use background-color, NOT background shorthand,
+    // so that CSS background-image rules for immersive mode still apply)
+    document.body.style.setProperty("position", "relative", "important");
+    document.body.style.setProperty("z-index", "1", "important");
+    document.body.style.setProperty("background-color", "transparent", "important");
+  }};
 
-    // Make body transparent and elevated
-    document.body.style.setProperty('position', 'relative', 'important');
-    document.body.style.setProperty('z-index', '1', 'important');
-    document.body.style.setProperty('background', 'transparent', 'important');
+  // ─── Apply (initial) ───────────────────────────────────────
+  function apply() {{
+    applyRootState(document.documentElement);
   }}
-
   apply();
 
-  // === 4. Self-healing (critical for SPA) ===
+  // ─── Self-healing ──────────────────────────────────────────
   function healIfNeeded() {{
     let healed = false;
+    const el = document.documentElement;
     if (!document.getElementById(STYLE_ID)) {{
-      document.head.appendChild(style);
+      (document.head || document.documentElement).appendChild(style);
       healed = true;
     }}
     if (!document.getElementById(ROOT_ID)) {{
-      document.body.prepend(root);
+      (document.body || document.documentElement).prepend(root);
       healed = true;
     }}
-    if (!document.documentElement.classList.contains(ACTIVE_CLASS)) {{
-      document.documentElement.classList.add(ACTIVE_CLASS, 'dark');
+    if (!el.classList.contains(ACTIVE_CLASS)) {{
+      el.classList.add(ACTIVE_CLASS, "dark");
+      el.setAttribute("data-hermes-mode", "dark");
       healed = true;
     }}
     if (healed) {{
-      // Re-assert body transparency
-      document.body.style.setProperty('background', 'transparent', 'important');
+      applyTheme(el);
+      applyArtMetadata(el);
+      document.body.style.setProperty("background-color", "transparent", "important");
     }}
     return healed;
   }}
 
-  // === 5. MutationObserver for SPA DOM rebuilds ===
-  const observer = new MutationObserver(() => {{
-    healIfNeeded();
-  }});
-  observer.observe(document.body, {{ childList: true, subtree: true }});
-  observer.observe(document.documentElement, {{ attributes: true, attributeFilter: ['class', 'style'] }});
+  // ─── MutationObserver for SPA DOM rebuilds ─────────────────
+  const observer = new MutationObserver(() => {{ healIfNeeded(); }});
+  observer.observe(document.body || document.documentElement, {{ childList: true, subtree: true }});
+  observer.observe(document.documentElement, {{ attributes: true, attributeFilter: ["class", "style"] }});
 
-  // === 6. Periodic safety scan ===
-  const scanInterval = setInterval(() => {{
-    healIfNeeded();
-  }}, 3000);
+  // ─── Periodic safety scan ──────────────────────────────────
+  const scanInterval = setInterval(() => {{ healIfNeeded(); }}, 3000);
 
-  // === 7. Gateway interference defense ===
-  // Hermes gateway periodically re-applies --theme-* variables via Ne().
-  // Our !important CSS rules have higher specificity and survive.
-  // But if the gateway sets inline styles on documentElement, we need to
-  // re-assert our overrides.
+  // ─── Gateway interference defense ──────────────────────────
+  // Hermes gateway periodically re-applies --theme-* variables.
+  // Our !important CSS rules win, but if the gateway sets inline
+  // styles on documentElement with !important, re-assert our class.
   const styleObserver = new MutationObserver(() => {{
-    // The gateway just set inline styles. Our !important CSS still wins
-    // because !important in a stylesheet beats non-!important inline styles.
-    // But if the gateway used setProperty with !important, we need to re-assert.
-    // Check if our active class is still present
     if (!document.documentElement.classList.contains(ACTIVE_CLASS)) {{
-      document.documentElement.classList.add(ACTIVE_CLASS, 'dark');
+      document.documentElement.classList.add(ACTIVE_CLASS, "dark");
     }}
   }});
-  styleObserver.observe(document.documentElement, {{ attributes: true, attributeFilter: ['style'] }});
+  styleObserver.observe(document.documentElement, {{ attributes: true, attributeFilter: ["style"] }});
 
-  // === 8. Cleanup function ===
+  // ─── Async art analysis ────────────────────────────────────
+  if (artUrl) {{
+    analyzeArt().then((analysis) => {{
+      if (!analysis) return;
+      if (!window[STATE_KEY] || window[STATE_KEY].version !== VERSION) return;
+      artAnalysis = analysis;
+      applyRootState(document.documentElement);
+    }}).catch(() => {{}});
+  }}
+
+  // ─── Cleanup ───────────────────────────────────────────────
   function cleanup() {{
     observer.disconnect();
     styleObserver.disconnect();
     clearInterval(scanInterval);
+    if (analysisTimer) {{ clearTimeout(analysisTimer); analysisTimer = null; }}
     document.getElementById(ROOT_ID)?.remove();
     document.getElementById(STYLE_ID)?.remove();
-    document.documentElement.classList.remove(ACTIVE_CLASS);
+    const el = document.documentElement;
+    el.classList.remove(ACTIVE_CLASS);
+    for (const name of ROOT_ATTRS) el.removeAttribute(name);
+    for (const name of THEME_VARIABLES) el.style.removeProperty(name);
+    // Clean any remaining --hs-* properties
+    for (const prop of [...(el.style || [])]) {{
+      if (prop.startsWith("--hs-")) el.style.removeProperty(prop);
+    }}
     // Restore body styles
-    document.body.style.removeProperty('position');
-    document.body.style.removeProperty('z-index');
-    document.body.style.removeProperty('background');
-    try {{ delete window[STATE_KEY]; }} catch(e) {{ window[STATE_KEY] = undefined; }}
+    document.body.style.removeProperty("position");
+    document.body.style.removeProperty("z-index");
+    document.body.style.removeProperty("background-color");
+    // Revoke blob URL
+    if (artUrl) {{ try {{ URL.revokeObjectURL(artUrl); }} catch (e) {{}} artUrl = null; }}
+    try {{ delete window[STATE_KEY]; }} catch (e) {{ window[STATE_KEY] = undefined; }}
   }}
 
-  // Store state
+  // ─── Store state ───────────────────────────────────────────
   window[STATE_KEY] = {{
     version: VERSION,
     cleanup,
     healIfNeeded,
     apply,
+    artUrl,
+    analysis: artAnalysis,
   }};
 
-  // Return status
+  // ─── Return status ─────────────────────────────────────────
   return JSON.stringify({{
     success: true,
     version: VERSION,
@@ -335,7 +720,8 @@ def build_renderer_script(css_text: str, art_data_url, theme: dict, selectors: d
     rootInDom: !!document.getElementById(ROOT_ID),
     activeClass: document.documentElement.classList.contains(ACTIVE_CLASS),
     htmlClass: document.documentElement.className,
-    artLoaded: !!ART_URL,
+    artLoaded: !!artUrl,
+    artAnalyzed: !!artAnalysis,
   }});
 }})()
 """
@@ -392,7 +778,7 @@ async def remove_from_session(session: CDPSession) -> bool:
         f'  document.documentElement.classList.remove("{ACTIVE_CLASS}");'
         f'  document.body.style.removeProperty("position");'
         f'  document.body.style.removeProperty("z-index");'
-        f'  document.body.style.removeProperty("background");'
+        f'  document.body.style.removeProperty("background-color");'
         f'  try {{ delete window.{STATE_KEY}; }} catch(e) {{ window.{STATE_KEY} = undefined; }}'
         f'  return "fallback-cleaned";'
         f'}})()'
