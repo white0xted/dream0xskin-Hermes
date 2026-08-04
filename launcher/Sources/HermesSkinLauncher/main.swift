@@ -319,7 +319,7 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
             showError("无法创建主题：\(error.localizedDescription)") ; return
         }
         rebuildMenu()
-        if injectorRunning() {
+        if cdpAvailable() {
             _ = runScript("stop-skin-macos.sh")
             startInjector()
         }
@@ -343,7 +343,7 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
         if selectedTheme == selection.id {
             selectedTheme = themes.first(where: { $0.id != selection.id })?.id ?? "linda"
             saveSelectedTheme()
-            if injectorRunning() {
+            if cdpAvailable() {
                 _ = runScript("stop-skin-macos.sh")
                 startInjector()
             }
@@ -371,7 +371,10 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
         selectedTheme = id
         saveSelectedTheme()
         rebuildMenu()
-        if injectorRunning() {
+        // Always restart the injector with the new theme when Hermes is
+        // reachable — even if the injector process died, so a theme switch
+        // is never a no-op (previously gated on injectorRunning()).
+        if cdpAvailable() {
             _ = runScript("stop-skin-macos.sh")
             startInjector()
         }
