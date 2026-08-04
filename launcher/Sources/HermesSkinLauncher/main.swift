@@ -320,8 +320,7 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
         }
         rebuildMenu()
         if cdpAvailable() {
-            _ = runScript("stop-skin-macos.sh")
-            startInjector()
+            restartInjectorAsync()
         }
     }
 
@@ -344,8 +343,7 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
             selectedTheme = themes.first(where: { $0.id != selection.id })?.id ?? "linda"
             saveSelectedTheme()
             if cdpAvailable() {
-                _ = runScript("stop-skin-macos.sh")
-                startInjector()
+                restartInjectorAsync()
             }
         }
         rebuildMenu()
@@ -375,8 +373,7 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
         // reachable — even if the injector process died, so a theme switch
         // is never a no-op (previously gated on injectorRunning()).
         if cdpAvailable() {
-            _ = runScript("stop-skin-macos.sh")
-            startInjector()
+            restartInjectorAsync()
         }
     }
 
@@ -530,6 +527,29 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
 
     // MARK: - Injector process
 
+    /// Stop the running injector and wait until the old process has fully
+    /// exited (polling kill(pid, 0)) before returning. This eliminates the
+    /// two-click race: previously startInjector's `guard !injectorRunning()`
+    /// blocked the restart while the old process was still shutting down.
+    private func stopInjectorAndWait() {
+        _ = runScript("stop-skin-macos.sh")
+        let deadline = Date().addingTimeInterval(4)
+        while injectorRunning() && Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.15)
+        }
+        // Ensure no stale PID file survives to confuse the next start.
+        try? fileManager.removeItem(at: stateRoot.appendingPathComponent("injector.pid"))
+    }
+
+    /// Restart the injector with the currently selected theme: stop the old
+    /// process, wait for it to fully exit (kills the two-click race), then
+    /// start a fresh injector. Runs synchronously on the main actor like the
+    /// original code — the stop script itself already blocks briefly.
+    private func restartInjectorAsync() {
+        stopInjectorAndWait()
+        startInjector()
+    }
+
     private func startInjector() {
         guard !injectorRunning(), let root = engineRoot else { return }
         try? fileManager.createDirectory(at: stateRoot, withIntermediateDirectories: true)
@@ -548,10 +568,16 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
         process.currentDirectoryURL = root
         process.standardOutput = log
         process.standardError = log
+        // Capture path up front: terminationHandler is a Sendable closure
+        // and cannot reference the @MainActor-isolated stateRoot directly.
+        let pidPath = stateRoot.appendingPathComponent("injector.pid")
         process.terminationHandler = { [weak self] proc in
             try? log.close()
-            let pid = String(proc.processIdentifier)
-            try? pid.write(to: root.appendingPathComponent("state/injector.pid"), atomically: true, encoding: .utf8)
+            // Write to stateRoot (same path injectorRunning() reads), not
+            // root/state — previously a stale PID here made theme switches
+            // require two clicks (guard in startInjector blocked the restart
+            // while the old process was still shutting down).
+            try? String(proc.processIdentifier).write(to: pidPath, atomically: true, encoding: .utf8)
             DispatchQueue.main.async { self?.refreshStatus() }
         }
         do {
@@ -590,9 +616,8 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
     // MARK: - Actions
 
     @objc private func reapply() {
+        restartInjectorAsync()
         Task {
-            _ = runScript("stop-skin-macos.sh")
-            startInjector()
             try? await Task.sleep(for: .milliseconds(800))
             refreshStatus()
         }
