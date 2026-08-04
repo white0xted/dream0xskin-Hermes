@@ -341,9 +341,24 @@ html.hermes-skin-active [data-slot="aui_thread-content"] [class*="user"] {
 }
 
 /* === Turn pair: light readability card over the background art ===
-   A thin frosted layer keeps streaming content legible without
-   hiding the artwork entirely (codex article-card approach). */
+   User prompts are Hermes-native solid bubbles (standalone-glass,
+   bg .88) — wrapping them in another card creates a double-border
+   look. So the reading card is applied to the turn container with
+   transparent corners for the user bubble area: the card's rounded
+   border is suppressed (the user bubble already carries its own
+   16px border), and the tint/blur still help assistant content. */
 html.hermes-skin-active [data-slot="aui_turn-pair"] {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Assistant content gets the frosted reading layer instead. */
+html.hermes-skin-active [data-slot="aui_assistant-message-root"] {
+  position: relative !important;
   background: rgb(var(--hs-bg-rgb) / .22) !important;
   border: 1px solid rgb(var(--hs-muted-rgb) / .10) !important;
   border-radius: 18px !important;
@@ -351,6 +366,22 @@ html.hermes-skin-active [data-slot="aui_turn-pair"] {
   box-shadow: 0 6px 20px rgb(var(--hs-bg-rgb) / .14) !important;
   backdrop-filter: blur(10px) saturate(1.08) !important;
   -webkit-backdrop-filter: blur(10px) saturate(1.08) !important;
+}
+
+/* User prompt: keep Hermes' native solid bubble untouched — it is
+   already opaque enough; force our generic [class*="user"] rule off
+   it so it does not get a second border/radius. */
+html.hermes-skin-active [data-slot="aui_thread-content"] [data-slot="aui_user-message-root"] {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html.hermes-skin-active [data-slot="aui_thread-content"] [data-slot="aui_user-message-root"] [class*="standalone-glass"] {
+  border-radius: 16px !important;
 }
 
 /* Assistant message body: keep text lifted above the art */
@@ -361,9 +392,9 @@ html.hermes-skin-active [data-slot="aui_assistant-message-content"] {
 }
 
 /* In immersive wide mode the body itself carries the art and the
-   turn cards only need a whisper of tint (text-shadow does the
-   heavy lifting there). */
-html.hermes-skin-active[data-hs-art-wide="true"] [data-slot="aui_turn-pair"] {
+   assistant reading cards only need a whisper of tint (text-shadow
+   does the heavy lifting there). */
+html.hermes-skin-active[data-hs-art-wide="true"] [data-slot="aui_assistant-message-root"] {
   background: rgb(var(--hs-bg-rgb) / .12) !important;
   border-color: rgb(var(--hs-muted-rgb) / .08) !important;
   backdrop-filter: blur(6px) saturate(1.04) !important;
