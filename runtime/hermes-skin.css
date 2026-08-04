@@ -340,6 +340,72 @@ html.hermes-skin-active [data-slot="aui_thread-content"] [class*="user"] {
   backdrop-filter: blur(7px) saturate(1.05) !important;
 }
 
+/* === Turn pair: light readability card over the background art ===
+   A thin frosted layer keeps streaming content legible without
+   hiding the artwork entirely (codex article-card approach). */
+html.hermes-skin-active [data-slot="aui_turn-pair"] {
+  background: rgb(var(--hs-bg-rgb) / .22) !important;
+  border: 1px solid rgb(var(--hs-muted-rgb) / .10) !important;
+  border-radius: 18px !important;
+  padding: 10px 16px !important;
+  box-shadow: 0 6px 20px rgb(var(--hs-bg-rgb) / .14) !important;
+  backdrop-filter: blur(10px) saturate(1.08) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(1.08) !important;
+}
+
+/* Assistant message body: keep text lifted above the art */
+html.hermes-skin-active [data-slot="aui_assistant-message-content"] {
+  text-shadow:
+    0 1px 3px rgb(var(--hs-bg-rgb) / .88),
+    0 0 14px rgb(var(--hs-bg-rgb) / .50) !important;
+}
+
+/* In immersive wide mode the body itself carries the art and the
+   turn cards only need a whisper of tint (text-shadow does the
+   heavy lifting there). */
+html.hermes-skin-active[data-hs-art-wide="true"] [data-slot="aui_turn-pair"] {
+  background: rgb(var(--hs-bg-rgb) / .12) !important;
+  border-color: rgb(var(--hs-muted-rgb) / .08) !important;
+  backdrop-filter: blur(6px) saturate(1.04) !important;
+  -webkit-backdrop-filter: blur(6px) saturate(1.04) !important;
+}
+
+/* === Thinking / reasoning disclosure ===
+   Hermes renders this with --ui-text-tertiary at ~54% white on a
+   transparent background, which vanishes over bright art. Lift it:
+   brighter text, soft shadow, and a small frosted chip. */
+html.hermes-skin-active [data-slot="aui_thinking-disclosure"] {
+  color: rgb(var(--hs-text-rgb) / .92) !important;
+  text-shadow:
+    0 1px 2px rgb(var(--hs-bg-rgb) / .92),
+    0 0 10px rgb(var(--hs-bg-rgb) / .55) !important;
+}
+
+html.hermes-skin-active [data-slot="aui_thinking-disclosure"] * {
+  color: inherit !important;
+  text-shadow: inherit !important;
+}
+
+html.hermes-skin-active [data-slot="aui_thinking-disclosure"] [class*="disclosure-row"] {
+  background: rgb(var(--hs-bg-rgb) / .30) !important;
+  border: 1px solid rgb(var(--hs-muted-rgb) / .12) !important;
+  border-radius: 999px !important;
+  padding: 3px 12px !important;
+  backdrop-filter: blur(8px) saturate(1.1) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(1.1) !important;
+}
+
+/* Expanded thinking body (child of the disclosure) */
+html.hermes-skin-active [data-slot="aui_thinking-disclosure"] [class*="content"] {
+  background: rgb(var(--hs-bg-rgb) / .35) !important;
+  border: 1px solid rgb(var(--hs-muted-rgb) / .12) !important;
+  border-radius: 12px !important;
+  padding: 10px 14px !important;
+  margin-top: 6px !important;
+  backdrop-filter: blur(10px) saturate(1.08) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(1.08) !important;
+}
+
 /* === Code blocks === */
 html.hermes-skin-active pre,
 html.hermes-skin-active [class*="code-block"],
