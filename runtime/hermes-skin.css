@@ -58,12 +58,15 @@ html.hermes-skin-active {
     rgb(var(--hs-bg-rgb) / .36) 48%,
     rgb(var(--hs-bg-rgb) / .12) 100%);
 
-  /* Immersive mode panel opacity (for wide images) */
-  --hs-immersive-edge: rgb(var(--hs-bg-rgb) / .82);
-  --hs-immersive-mid: rgb(var(--hs-bg-rgb) / .50);
-  --hs-immersive-far: rgb(var(--hs-bg-rgb) / .20);
-  --hs-immersive-sidebar: rgb(var(--hs-panel-rgb) / .72);
-  --hs-immersive-composer: rgb(var(--hs-panel-2-rgb) / .88);
+  /* Immersive mode panel opacity (for wide images)
+     Values tuned to match codex skin aesthetics — thin glass so
+     background art stays visible. Hermes text readability is
+     handled by text-shadow, not by darkening the glass. */
+  --hs-immersive-edge: rgb(var(--hs-bg-rgb) / .40);
+  --hs-immersive-mid: rgb(var(--hs-bg-rgb) / .26);
+  --hs-immersive-far: rgb(var(--hs-bg-rgb) / .16);
+  --hs-immersive-sidebar: rgb(var(--hs-panel-rgb) / .46);
+  --hs-immersive-composer: rgb(var(--hs-panel-2-rgb) / .60);
   --hs-immersive-line: rgb(var(--hs-muted-rgb) / .42);
 
   /* === Hermes --theme-* variable overrides === */

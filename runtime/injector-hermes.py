@@ -426,12 +426,12 @@ def build_renderer_script(css_text: str, art_data_url, theme: dict, selectors: d
     setStyleProperty(el, "--hs-task-shade",
       "linear-gradient(90deg, rgb(var(--hs-bg-rgb) / .56) 0%, rgb(var(--hs-bg-rgb) / .36) 48%, rgb(var(--hs-bg-rgb) / .12) 100%)");
 
-    // Immersive mode panel opacity
-    setStyleProperty(el, "--hs-immersive-edge", "rgb(var(--hs-bg-rgb) / .82)");
-    setStyleProperty(el, "--hs-immersive-mid", "rgb(var(--hs-bg-rgb) / .50)");
-    setStyleProperty(el, "--hs-immersive-far", "rgb(var(--hs-bg-rgb) / .20)");
-    setStyleProperty(el, "--hs-immersive-sidebar", "rgb(var(--hs-panel-rgb) / .72)");
-    setStyleProperty(el, "--hs-immersive-composer", "rgb(var(--hs-panel-2-rgb) / .88)");
+    // Immersive mode panel opacity (thin glass, codex aesthetics)
+    setStyleProperty(el, "--hs-immersive-edge", "rgb(var(--hs-bg-rgb) / .40)");
+    setStyleProperty(el, "--hs-immersive-mid", "rgb(var(--hs-bg-rgb) / .26)");
+    setStyleProperty(el, "--hs-immersive-far", "rgb(var(--hs-bg-rgb) / .16)");
+    setStyleProperty(el, "--hs-immersive-sidebar", "rgb(var(--hs-panel-rgb) / .46)");
+    setStyleProperty(el, "--hs-immersive-composer", "rgb(var(--hs-panel-2-rgb) / .60)");
     setStyleProperty(el, "--hs-immersive-line", "rgb(var(--hs-muted-rgb) / .42)");
   }};
 
