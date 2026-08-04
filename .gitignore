@@ -18,3 +18,4 @@ node_modules/
 
 # Development assets (not shipped)
 prototype/
+launcher/Assets/*.iconset/

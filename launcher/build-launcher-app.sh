@@ -20,6 +20,12 @@ mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources/Engine"
 
 cp "$SCRIPT_DIR/.build/release/$APP_NAME" "$APP_DIR/Contents/MacOS/$APP_NAME"
 cp "$SCRIPT_DIR/Info.plist" "$APP_DIR/Contents/Info.plist"
+
+# App icon
+if [ -f "$SCRIPT_DIR/Assets/hermes-skin.icns" ]; then
+    cp "$SCRIPT_DIR/Assets/hermes-skin.icns" "$APP_DIR/Contents/Resources/hermes-skin.icns"
+fi
+
 ditto "$ROOT_DIR/runtime" "$APP_DIR/Contents/Resources/Engine/runtime"
 ditto "$ROOT_DIR/scripts" "$APP_DIR/Contents/Resources/Engine/scripts"
 chmod 755 "$APP_DIR/Contents/MacOS/$APP_NAME" "$APP_DIR/Contents/Resources/Engine/scripts/"*.sh

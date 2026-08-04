@@ -5,6 +5,7 @@
   <key>CFBundleDevelopmentRegion</key><string>zh_CN</string>
   <key>CFBundleDisplayName</key><string>Hermes Skin</string>
   <key>CFBundleExecutable</key><string>hermes-skin</string>
+  <key>CFBundleIconFile</key><string>hermes-skin</string>
   <key>CFBundleIdentifier</key><string>com.white0xted.hermes-skin</string>
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
   <key>CFBundleName</key><string>Hermes Skin</string>
