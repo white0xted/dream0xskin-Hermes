@@ -1,0 +1,125 @@
+{
+  "schema": "hermes-desktop-skin-selectors/1",
+  "description": "Hermes Desktop 皮肤选择器契约。基于 2026-08-04 Hermes Desktop v0.17.0 (Electron 40.10.2, Chrome 144) 实测。Hermes 使用 data-slot 属性作为稳定语义选择器，比 CSS Modules 或 data-testid 更稳定。",
+  "verifiedAgainst": {
+    "date": "2026-08-04",
+    "hermesVersion": "0.17.0",
+    "electron": "40.10.2",
+    "chromium": "144.0.7559.236",
+    "method": "CDP live DOM inspection via --remote-debugging-port=9334"
+  },
+  "appearanceSignal": {
+    "dark": "html.dark",
+    "light": "html:not(.dark)",
+    "attributeMode": "data-hermes-mode"
+  },
+  "cdpConfig": {
+    "port": 9334,
+    "targetFilter": "file:",
+    "targetUrlPattern": "app.asar/dist/index.html",
+    "launchArgs": ["--remote-debugging-port=9334", "--user-data-dir=/tmp/hermes-skin-cdp"],
+    "appPath": "/Applications/Hermes.app/Contents/MacOS/Hermes",
+    "nodePath": "/Users/bytedance/.hermes/hermes-agent/venv/bin/python",
+    "note": "Hermes uses Electron's built-in Node.js; injector runs on system Node or Hermes venv Python"
+  },
+  "selectors": [
+    {
+      "key": "shell-main",
+      "selector": "[data-slot=\"sidebar-wrapper\"]",
+      "tier": "L1",
+      "required": true,
+      "notes": "Root layout container (full window). Background gradient/art goes here."
+    },
+    {
+      "key": "left-panel",
+      "selector": "[data-slot=\"sidebar\"]",
+      "tier": "L1",
+      "required": true,
+      "notes": "Left navigation panel (237px wide). Frosted glass target."
+    },
+    {
+      "key": "header-tint",
+      "selector": ".relative.h-\\[34px\\]",
+      "tier": "L1",
+      "required": true,
+      "notes": "Title bar. No data-slot - uses Tailwind class. May change between Hermes versions."
+    },
+    {
+      "key": "main-content",
+      "selector": "[data-slot=\"composer-bounds\"]",
+      "tier": "L1",
+      "required": true,
+      "notes": "Main content area (right of sidebar). Must be transparent."
+    },
+    {
+      "key": "thread-viewport",
+      "selector": "[data-slot=\"aui_thread-viewport\"]",
+      "tier": "L2",
+      "required": false,
+      "notes": "Chat thread scroll container"
+    },
+    {
+      "key": "thread-content",
+      "selector": "[data-slot=\"aui_thread-content\"]",
+      "tier": "L2",
+      "required": false,
+      "notes": "Chat thread content"
+    },
+    {
+      "key": "intro-content",
+      "selector": "[data-slot=\"aui_intro\"]",
+      "tier": "L2",
+      "required": false,
+      "notes": "Welcome/empty state content"
+    },
+    {
+      "key": "composer-surface",
+      "selector": "[data-slot=\"composer-surface\"]",
+      "tier": "L1",
+      "required": true,
+      "notes": "Composer input surface. Frosted glass target."
+    },
+    {
+      "key": "composer-root",
+      "selector": "[data-slot=\"composer-root\"]",
+      "tier": "L2",
+      "required": false,
+      "notes": "Composer form element"
+    },
+    {
+      "key": "composer-input",
+      "selector": "[data-slot=\"composer-rich-input\"]",
+      "tier": "L2",
+      "required": false,
+      "notes": "Text input area (role=textbox). Text color target."
+    },
+    {
+      "key": "profile-rail",
+      "selector": "[data-slot=\"profile-rail\"]",
+      "tier": "L2",
+      "required": false,
+      "notes": "User profile area (bottom of sidebar)"
+    },
+    {
+      "key": "sidebar-content",
+      "selector": "[data-slot=\"sidebar-content\"]",
+      "tier": "L2",
+      "required": false,
+      "notes": "Sidebar inner content"
+    },
+    {
+      "key": "layout-flex",
+      "selector": ".flex.h-screen",
+      "tier": "L2",
+      "required": false,
+      "notes": "Flex layout container. Needs transparent background."
+    },
+    {
+      "key": "layout-main-area",
+      "selector": ".relative.flex.min-h-0",
+      "tier": "L2",
+      "required": false,
+      "notes": "Main content flex area. Needs transparent background."
+    }
+  ]
+}

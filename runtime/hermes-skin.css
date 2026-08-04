@@ -1,0 +1,193 @@
+/* ============================================================
+ * Hermes Skin CSS — Linda (Cold Blue-Grey)
+ * 
+ * Verified against Hermes Desktop v0.17.0 on 2026-08-04.
+ * Overrides --theme-* CSS variables and provides translucent
+ * panel effects via backdrop-filter.
+ * 
+ * Key insight: Hermes sets --theme-* variables on
+ * document.documentElement.style via the Ne() function.
+ * Our !important rules survive gateway skin.changed events.
+ * ============================================================ */
+
+/* === Theme variable overrides === */
+html.hermes-skin-active {
+  --theme-background-seed: #080b10 !important;
+  --theme-foreground: #eaf1f5 !important;
+  --theme-primary: #7a8b94 !important;
+  --theme-secondary: #5a6b74 !important;
+  --theme-accent-soft: #1a1f28 !important;
+  --theme-midground: #7a8b94 !important;
+  --theme-warm: #7a8b94 !important;
+  --theme-sidebar-seed: transparent !important;
+  --theme-card-seed: transparent !important;
+  --theme-elevated-seed: transparent !important;
+  --theme-bubble-seed: rgba(17, 21, 28, 0.6) !important;
+
+  /* Mix percentages — set to 0% so seeds pass through directly */
+  --theme-mix-chrome: 0% !important;
+  --theme-mix-card: 0% !important;
+  --theme-mix-elevated: 0% !important;
+  --theme-mix-bubble: 0% !important;
+  --theme-mix-sidebar: 0% !important;
+
+  /* Neutral chrome — transparent so background art shows through */
+  --theme-neutral-chrome: transparent !important;
+  --theme-neutral-sidebar: transparent !important;
+  --theme-neutral-card: transparent !important;
+
+  color-scheme: dark !important;
+  background-color: transparent !important;
+}
+
+/* === Body: elevate above background overlay === */
+html.hermes-skin-active body {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+  color: #eaf1f5 !important;
+}
+
+/* === Background overlay (art layer) === */
+#hermes-skin-root {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 70% 30%, rgba(122, 139, 148, 0.12) 0%, transparent 55%),
+    linear-gradient(135deg, #080b10 0%, #11151c 45%, #1a1f28 100%);
+}
+
+/* === All layout containers: transparent === */
+html.hermes-skin-active #root,
+html.hermes-skin-active [data-slot="sidebar-wrapper"],
+html.hermes-skin-active [data-slot="sidebar-content"],
+html.hermes-skin-active [data-slot="sidebar-group"],
+html.hermes-skin-active [data-slot="sidebar-group-content"],
+html.hermes-skin-active [data-slot="sidebar-menu"],
+html.hermes-skin-active [data-slot="composer-bounds"],
+html.hermes-skin-active [data-slot="aui_thread-viewport"],
+html.hermes-skin-active [data-slot="aui_thread-content"],
+html.hermes-skin-active [data-slot="aui_intro"],
+html.hermes-skin-active [data-slot="composer-root"],
+html.hermes-skin-active [data-slot="composer-dock"],
+html.hermes-skin-active [data-slot="composer-fade"],
+html.hermes-skin-active [data-slot="composer-drag-region"],
+html.hermes-skin-active [data-slot="profile-rail"],
+html.hermes-skin-active .flex.h-screen,
+html.hermes-skin-active .relative.flex.min-h-0,
+html.hermes-skin-active .group\/sidebar-wrapper {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* === Sidebar: frosted glass panel === */
+html.hermes-skin-active [data-slot="sidebar"] {
+  background: rgba(17, 21, 28, 0.65) !important;
+  backdrop-filter: blur(24px) saturate(1.3) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.3) !important;
+  border-right: 1px solid rgba(122, 139, 148, 0.12) !important;
+}
+
+/* === Composer: frosted glass input === */
+html.hermes-skin-active [data-slot="composer-surface"] {
+  background: rgba(26, 31, 40, 0.55) !important;
+  backdrop-filter: blur(20px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+  border: 1px solid rgba(122, 139, 148, 0.18) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* === Title bar: subtle frosted === */
+html.hermes-skin-active .relative.h-\[34px\] {
+  background: rgba(10, 13, 18, 0.4) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+/* === Text color adjustments === */
+html.hermes-skin-active [data-slot="composer-rich-input"] {
+  color: #eaf1f5 !important;
+}
+
+html.hermes-skin-active [data-slot="composer-rich-input"]::placeholder {
+  color: rgba(174, 184, 191, 0.5) !important;
+}
+
+/* === Sidebar menu items === */
+html.hermes-skin-active [data-slot="sidebar-menu-item"] {
+  color: rgba(234, 241, 245, 0.7) !important;
+}
+
+html.hermes-skin-active [data-slot="sidebar-menu-item"]:hover,
+html.hermes-skin-active [data-slot="sidebar-menu-item"][data-active="true"] {
+  background: rgba(122, 139, 148, 0.12) !important;
+  color: #eaf1f5 !important;
+}
+
+/* === Scrollbar styling === */
+html.hermes-skin-active ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+html.hermes-skin-active ::-webkit-scrollbar-thumb {
+  background: rgba(122, 139, 148, 0.25);
+  border-radius: 3px;
+}
+
+html.hermes-skin-active ::-webkit-scrollbar-thumb:hover {
+  background: rgba(122, 139, 148, 0.4);
+}
+
+html.hermes-skin-active ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* === User message bubble === */
+html.hermes-skin-active [data-slot="aui_thread-content"] [class*="bubble"],
+html.hermes-skin-active [data-slot="aui_thread-content"] [class*="user"] {
+  background: rgba(17, 21, 28, 0.75) !important;
+  border: 1px solid rgba(122, 139, 148, 0.1) !important;
+  border-radius: 12px !important;
+}
+
+/* === Code blocks === */
+html.hermes-skin-active pre,
+html.hermes-skin-active [class*="code-block"],
+html.hermes-skin-active [class*="CodeBlock"] {
+  background: rgba(8, 11, 16, 0.7) !important;
+  border: 1px solid rgba(122, 139, 148, 0.1) !important;
+  border-radius: 8px !important;
+}
+
+/* === Links === */
+html.hermes-skin-active a {
+  color: #9ab4c0 !important;
+}
+
+html.hermes-skin-active a:hover {
+  color: #b0ccd8 !important;
+}
+
+/* === Buttons === */
+html.hermes-skin-active button[class*="primary"],
+html.hermes-skin-active [data-slot="button"][data-variant="primary"] {
+  background: rgba(122, 139, 148, 0.2) !important;
+  border: 1px solid rgba(122, 139, 148, 0.3) !important;
+  color: #eaf1f5 !important;
+}
+
+html.hermes-skin-active button[class*="primary"]:hover,
+html.hermes-skin-active [data-slot="button"][data-variant="primary"]:hover {
+  background: rgba(122, 139, 148, 0.3) !important;
+}
+
+/* === Backdrop-filter fallback ===
+ * If GPU compositing is unavailable (e.g. probe instance with
+ * throwaway --user-data-dir), backdrop-filter may not produce
+ * visible blur. The rgba() backgrounds above provide a usable
+ * fallback — panels are semi-transparent even without blur.
+ */

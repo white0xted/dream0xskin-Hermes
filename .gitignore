@@ -1,0 +1,20 @@
+# Build artifacts
+.build/
+dist/
+
+# Runtime state
+state/
+*.pid
+*.log
+
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+
+# Hermes
+.hermes/
+
+# Development assets (not shipped)
+prototype/
