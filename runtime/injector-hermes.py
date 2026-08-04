@@ -426,12 +426,13 @@ def build_renderer_script(css_text: str, art_data_url, theme: dict, selectors: d
     setStyleProperty(el, "--hs-task-shade",
       "linear-gradient(90deg, rgb(var(--hs-bg-rgb) / .56) 0%, rgb(var(--hs-bg-rgb) / .36) 48%, rgb(var(--hs-bg-rgb) / .12) 100%)");
 
-    // Immersive mode panel opacity (thin glass, codex aesthetics)
-    setStyleProperty(el, "--hs-immersive-edge", "rgb(var(--hs-bg-rgb) / .40)");
-    setStyleProperty(el, "--hs-immersive-mid", "rgb(var(--hs-bg-rgb) / .26)");
-    setStyleProperty(el, "--hs-immersive-far", "rgb(var(--hs-bg-rgb) / .16)");
-    setStyleProperty(el, "--hs-immersive-sidebar", "rgb(var(--hs-panel-rgb) / .46)");
-    setStyleProperty(el, "--hs-immersive-composer", "rgb(var(--hs-panel-2-rgb) / .60)");
+    // Immersive mode panel opacity (thin glass, codex aesthetics;
+    // extra-thin now — reading cards carry content legibility)
+    setStyleProperty(el, "--hs-immersive-edge", "rgb(var(--hs-bg-rgb) / .28)");
+    setStyleProperty(el, "--hs-immersive-mid", "rgb(var(--hs-bg-rgb) / .18)");
+    setStyleProperty(el, "--hs-immersive-far", "rgb(var(--hs-bg-rgb) / .10)");
+    setStyleProperty(el, "--hs-immersive-sidebar", "rgb(var(--hs-panel-rgb) / .32)");
+    setStyleProperty(el, "--hs-immersive-composer", "rgb(var(--hs-panel-2-rgb) / .45)");
     setStyleProperty(el, "--hs-immersive-line", "rgb(var(--hs-muted-rgb) / .42)");
   }};
 
