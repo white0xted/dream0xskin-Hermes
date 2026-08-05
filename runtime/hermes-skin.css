@@ -336,6 +336,33 @@ html.hermes-skin-active [data-slot="statusbar"] [role="button"]:hover {
   color: var(--hs-text) !important;
 }
 
+/* === Intro / welcome screen: Dream0xSkin branding ===
+   The intro screen has [data-slot="aui_intro"] containing the
+   "HERMES AGENT" title + subtitle. Inject a small brand badge
+   above the title via ::before on the inner wrapper div. */
+html.hermes-skin-active [data-slot="aui_intro"] > div::before {
+  content: "Ada Sofa \00B7 Powered by Dream0xSkin";
+  display: block;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "PingFang SC", system-ui, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(var(--hs-accent-rgb) / .72);
+  margin-bottom: 0.75rem;
+  text-shadow:
+    0 1px 3px rgb(var(--hs-bg-rgb) / .88),
+    0 0 12px rgb(var(--hs-bg-rgb) / .50);
+  opacity: 0;
+  animation: hs-brand-fade-in .8s ease-out .3s forwards;
+}
+
+@keyframes hs-brand-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* === Dialog / Modal / Popover readability ===
    Hermes has two overlay systems:
    1. Setup/boot dialogs (z-1400): bg-background/90 → resolves to
