@@ -3,6 +3,7 @@ import Darwin
 import Foundation
 import ServiceManagement
 import UniformTypeIdentifiers
+import UserNotifications
 
 // MARK: - Status
 
@@ -366,14 +367,35 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
 
     @objc private func selectTheme(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? String else { return }
+        let themeName = sender.title
         selectedTheme = id
         saveSelectedTheme()
         rebuildMenu()
         // Always restart the injector with the new theme when Hermes is
-        // reachable — even if the injector process died, so a theme switch
+        // reachable - even if the injector process died, so a theme switch
         // is never a no-op (previously gated on injectorRunning()).
         if cdpAvailable() {
             restartInjectorAsync()
+            notifyThemeSwitch(name: themeName)
+        }
+    }
+
+    // MARK: - Theme switch notification
+
+    /// Show a non-intrusive macOS notification when a theme switch succeeds.
+    /// Requests notification authorization on first use, then schedules a
+    /// short-lived UNNotification with the theme name.
+    private func notifyThemeSwitch(name: String) {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert]) { granted, _ in
+            guard granted else { return }
+            let content = UNMutableNotificationContent()
+            content.title = "Hermes Skin"
+            content.body = "已切换至「\(name)」"
+            content.sound = nil
+            let req = UNNotificationRequest(
+                identifier: "theme-switch-\(Date().timeIntervalSince1970)",
+                content: content, trigger: nil)
+            UNUserNotificationCenter.current().add(req)
         }
     }
 
@@ -387,7 +409,6 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
         menu.addItem(.separator())
         menu.addItem(item("启动并连接 Hermes", #selector(launchAndAttach), "play.fill"))
         menu.addItem(item("重新应用皮肤", #selector(reapply), "arrow.clockwise"))
-        menu.addItem(item("暂停皮肤", #selector(pauseSkin), "pause.fill"))
         menu.addItem(item("恢复原生界面", #selector(restoreOriginal), "arrow.uturn.backward"))
         menu.addItem(.separator())
 
