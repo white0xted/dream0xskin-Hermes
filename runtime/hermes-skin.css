@@ -336,6 +336,63 @@ html.hermes-skin-active [data-slot="statusbar"] [role="button"]:hover {
   color: var(--hs-text) !important;
 }
 
+/* === Dialog / Modal / Popover readability ===
+   Hermes has two overlay systems:
+   1. Setup/boot dialogs (z-1400): bg-background/90 → resolves to
+      --ui-bg-chrome/90. We set --theme-mix-chrome:0% +
+      --theme-neutral-chrome:transparent, which makes --ui-bg-chrome
+      transparent, so the overlay vanishes. Fix: force opaque bg.
+   2. Radix Dialog (z-200/210): overlay is bg-black/15 + 1px blur
+      (barely visible), content uses bg-(--ui-chat-bubble-background)
+      which we set to semi-transparent. Fix: darken overlay + solid
+      content background. */
+
+/* All full-screen overlays (both setup and Radix) */
+html.hermes-skin-active [class*="fixed inset-0 z-("],
+html.hermes-skin-active [style*="position: fixed"][style*="inset: 0"] {
+  background-color: rgb(var(--hs-bg-rgb) / .88) !important;
+  backdrop-filter: blur(16px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
+}
+
+/* Radix Dialog overlay specifically (bg-black/15 is too thin) */
+html.hermes-skin-active [class*="bg-black/15"][class*="backdrop-blur"] {
+  background-color: rgb(var(--hs-bg-rgb) / .82) !important;
+  backdrop-filter: blur(12px) saturate(1.15) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.15) !important;
+}
+
+/* Dialog content panels: force opaque background */
+html.hermes-skin-active [class*="bg-(--ui-chat-bubble-background)"],
+html.hermes-skin-active [class*="bg-(--ui-chat-surface-background)"] {
+  background-color: rgb(var(--hs-panel-rgb)) !important;
+}
+
+/* Radix Dialog content: the rounded card with changelog/buttons */
+html.hermes-skin-active [class*="overflow-hidden rounded-xl"][class*="shadow"] {
+  background-color: rgb(var(--hs-panel-rgb)) !important;
+  border: 1px solid rgb(var(--hs-muted-rgb) / .20) !important;
+  box-shadow: 0 24px 64px rgb(0 0 0 / .50) !important;
+}
+
+/* Setup wizard panels (z-setup, bg-background/90) */
+html.hermes-skin-active [class*="z-(--z-setup)"] > [class*="rounded"] {
+  background-color: rgb(var(--hs-panel-rgb)) !important;
+  border: 1px solid rgb(var(--hs-muted-rgb) / .16) !important;
+  box-shadow: 0 24px 64px rgb(0 0 0 / .50) !important;
+}
+
+/* Dialog text color: ensure all text in dialogs is readable */
+html.hermes-skin-active [class*="z-(--z-over-modal-content)"],
+html.hermes-skin-active [class*="z-(--z-setup)"] {
+  color: var(--hs-text) !important;
+}
+
+html.hermes-skin-active [class*="z-(--z-over-modal-content)"] *,
+html.hermes-skin-active [class*="z-(--z-setup)"] * {
+  color: inherit !important;
+}
+
 /* === Scrollbar styling === */
 html.hermes-skin-active ::-webkit-scrollbar {
   width: 6px;
