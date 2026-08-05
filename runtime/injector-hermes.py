@@ -205,6 +205,19 @@ def build_renderer_script(css_text: str, art_data_url, theme: dict, selectors: d
     selectors_escaped = json.dumps(selectors)
 
     return f"""(() => {{
+  // ─── Clean up any previous instance ─────────────────────────
+  // If a prior renderer's state still exists, call its cleanup to
+  // disconnect MutationObservers and clear intervals.  Without this,
+  // re-injection leaves orphaned observers that re-create the old
+  // <style> element with stale CSS every time the DOM changes.
+  if (window.{STATE_KEY} && typeof window.{STATE_KEY}.cleanup === "function") {{
+    try {{ window.{STATE_KEY}.cleanup(); }} catch (e) {{}}
+  }}
+  // Belt-and-suspenders: remove any lingering DOM elements even if
+  // the state object was already overwritten.
+  document.getElementById("{STYLE_ID}")?.remove();
+  document.getElementById("{ROOT_ID}")?.remove();
+
   const CSS_TEXT = {css_escaped};
   const ART_DATA_URL = {art_escaped};
   const THEME = {theme_escaped};
