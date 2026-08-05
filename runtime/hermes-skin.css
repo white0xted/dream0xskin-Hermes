@@ -439,6 +439,39 @@ html.hermes-skin-active [data-slot="aui_thinking-disclosure"] [class*="content"]
   -webkit-backdrop-filter: blur(10px) saturate(1.08) !important;
 }
 
+/* === Tooltips ===
+   Hermes renders tooltips with bg-foreground/text-background tokens
+   (light chip + dark text). After our --theme-* overrides flip those
+   tokens, the chip turns near-white and clashes with the dark glass
+   UI. Restyle to a dark frosted chip consistent with the skin. */
+html.hermes-skin-active [data-slot="tooltip-content"] {
+  background: transparent !important;
+  border-radius: 8px !important;
+}
+
+html.hermes-skin-active [data-slot="tooltip-content"] [class*="bg-foreground"] {
+  background: rgb(var(--hs-panel-rgb) / .96) !important;
+  color: var(--hs-text) !important;
+  border: 1px solid rgb(var(--hs-muted-rgb) / .16) !important;
+  border-radius: 8px !important;
+  box-shadow:
+    0 4px 18px rgb(var(--hs-bg-rgb) / .45),
+    0 1px 3px rgb(var(--hs-bg-rgb) / .30) !important;
+  backdrop-filter: blur(12px) saturate(1.15) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.15) !important;
+}
+
+html.hermes-skin-active [data-slot="tooltip-content"] [class*="bg-foreground"] * {
+  color: var(--hs-text) !important;
+}
+
+/* Kbd hint inside tooltip: dimmed like the native style */
+html.hermes-skin-active [data-slot="tooltip-content"] [class*="opacity-55"],
+html.hermes-skin-active [data-slot="tooltip-content"] kbd {
+  opacity: .62 !important;
+  color: var(--hs-muted) !important;
+}
+
 /* === Code blocks === */
 html.hermes-skin-active pre,
 html.hermes-skin-active [class*="code-block"],
