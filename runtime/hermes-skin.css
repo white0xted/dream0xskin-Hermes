@@ -181,7 +181,7 @@ html.hermes-skin-active [data-slot="composer-surface"] {
   backdrop-filter: blur(20px) saturate(1.2) !important;
   -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
   border: 1px solid rgb(var(--hs-muted-rgb) / .18) !important;
-  border-radius: 16px !important;
+  border-radius: 10px !important;
   box-shadow: 0 10px 28px rgb(var(--hs-bg-rgb) / .24) !important;
   color: var(--hs-text) !important;
 }
@@ -208,7 +208,7 @@ html.hermes-skin-active
   [data-slot="composer-dock"] [class*="rounded-t-2xl"] {
   background: var(--hs-immersive-composer) !important;
   border: 1px solid rgb(var(--hs-muted-rgb) / .18) !important;
-  border-radius: 16px !important;
+  border-radius: 10px !important;
   backdrop-filter: blur(20px) saturate(1.15) !important;
   -webkit-backdrop-filter: blur(20px) saturate(1.15) !important;
   box-shadow: 0 10px 30px rgb(var(--hs-bg-rgb) / .20) !important;
@@ -488,7 +488,7 @@ html.hermes-skin-active [data-slot="aui_thread-content"] [class*="bubble"],
 html.hermes-skin-active [data-slot="aui_thread-content"] [class*="bg-(--dt-user-bubble)"] {
   background: rgb(var(--hs-panel-rgb) / .78) !important;
   border: 1px solid rgb(var(--hs-muted-rgb) / .12) !important;
-  border-radius: 16px !important;
+  border-radius: 10px !important;
   box-shadow: 0 8px 24px rgb(var(--hs-bg-rgb) / .10) !important;
   backdrop-filter: blur(10px) saturate(1.08) !important;
 }
@@ -514,7 +514,7 @@ html.hermes-skin-active [data-slot="aui_assistant-message-root"] {
   position: relative !important;
   background: rgb(var(--hs-bg-rgb) / .22) !important;
   border: 1px solid rgb(var(--hs-muted-rgb) / .10) !important;
-  border-radius: 18px !important;
+  border-radius: 12px !important;
   padding: 10px 16px !important;
   box-shadow: 0 6px 20px rgb(var(--hs-bg-rgb) / .14) !important;
   backdrop-filter: blur(10px) saturate(1.08) !important;
@@ -534,7 +534,7 @@ html.hermes-skin-active [data-slot="aui_thread-content"] [data-slot="aui_user-me
 }
 
 html.hermes-skin-active [data-slot="aui_thread-content"] [data-slot="aui_user-message-root"] [class*="standalone-glass"] {
-  border-radius: 16px !important;
+  border-radius: 10px !important;
 }
 
 /* Assistant message body: keep text lifted above the art */
