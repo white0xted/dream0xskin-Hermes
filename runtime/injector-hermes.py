@@ -698,8 +698,19 @@ def build_renderer_script(css_text: str, art_data_url, theme: dict, selectors: d
   observer.observe(document.body || document.documentElement, {{ childList: true, subtree: true }});
   observer.observe(document.documentElement, {{ attributes: true, attributeFilter: ["class", "style"] }});
 
+  // ─── Dedicated branding observer ───────────────────────────
+  // The main MutationObserver calls healIfNeeded which calls
+  // injectBranding, but React may render the intro's children
+  // asynchronously.  This dedicated observer watches specifically
+  // for aui_intro appearing and retries badge injection on every
+  // mutation within it until the badge sticks.
+  const brandObserver = new MutationObserver(() => {{ injectBranding(); }});
+  brandObserver.observe(document.body || document.documentElement, {{
+    childList: true, subtree: true,
+  }});
+
   // ─── Periodic safety scan ──────────────────────────────────
-  const scanInterval = setInterval(() => {{ healIfNeeded(); }}, 3000);
+  const scanInterval = setInterval(() => {{ healIfNeeded(); }}, 1500);
 
   // ─── Gateway interference defense ──────────────────────────
   // Hermes gateway periodically re-applies --theme-* variables.
@@ -726,6 +737,7 @@ def build_renderer_script(css_text: str, art_data_url, theme: dict, selectors: d
   function cleanup() {{
     observer.disconnect();
     styleObserver.disconnect();
+    brandObserver.disconnect();
     clearInterval(scanInterval);
     if (analysisTimer) {{ clearTimeout(analysisTimer); analysisTimer = null; }}
     document.getElementById(ROOT_ID)?.remove();
@@ -753,6 +765,7 @@ def build_renderer_script(css_text: str, art_data_url, theme: dict, selectors: d
     version: VERSION,
     cleanup,
     healIfNeeded,
+    injectBranding,
     apply,
     artUrl,
     analysis: artAnalysis,
