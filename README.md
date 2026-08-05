@@ -8,9 +8,15 @@
 
 ![dream0xskin-Hermes demo](docs/demo.png)
 
-> The character **Ada** — a high elf with a cybernetic leg, seated in an opulent baroque library, rendered in warm gold and deep shadow. The default theme that ships with dream0xskin-Hermes.
+> The character **Ada** - a high elf with a cybernetic leg, seated in an opulent baroque library, rendered in warm gold and deep shadow. The default theme that ships with dream0xskin-Hermes.
 >
-> 角色形象 **Ada** — 一位装有赛博机械义肢的高等精灵，端坐于华丽的巴洛克书房中，以暖金与深沉阴影呈现。dream0xskin-Hermes 的默认主题。
+> 角色形象 **Ada** - 一位装有赛博机械义肢的高等精灵，端坐于华丽的巴洛克书房中，以暖金与深沉阴影呈现。dream0xskin-Hermes 的默认主题。
+
+![dream0xskin-Hermes demo - Aura Stand](docs/demo-aura-stand.png)
+
+> **Aura Stand** - the same high elf standing on coastal rocks at golden hour, holographic halo shimmering above, iridescent robes catching the sunset. A user-created theme showing the immersive frosted-glass effect over a vivid landscape.
+>
+> **Aura Stand** - 同一位高等精灵在黄金时刻立于海岸礁石之上，幻彩圣光环悬浮于头顶，镭射长袍映照夕阳余晖。用户自定义主题，展示沉浸式毛玻璃效果与生动风景背景的融合。
 
 ---
 
@@ -116,7 +122,8 @@ dream0xskin-Hermes/
 │   ├── stop-skin-macos.sh             # Stop injection / 停止注入
 │   └── doctor-macos.sh                # Diagnostics / 诊断
 ├── docs/
-│   └── demo.png                       # Screenshot / 截图
+│   ├── demo.png                       # Screenshot - Ada Sofa theme / 截图 - Ada Sofa 主题
+│   └── demo-aura-stand.png            # Screenshot - Aura Stand theme / 截图 - Aura Stand 主题
 ├── HANDOFF.md                         # Technical documentation / 技术文档
 └── LICENSE                            # MIT
 ```
