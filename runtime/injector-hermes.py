@@ -10,7 +10,7 @@ the `websockets` library (available in the Hermes venv) since Hermes
 does not bundle a Node.js runtime.
 
 Usage:
-  python3 injector-hermes.py --port 9334 --theme-dir runtime/themes-hermes/linda
+  python3 injector-hermes.py --port 9334 --theme-dir runtime/themes-hermes/ada-sofa
   python3 injector-hermes.py --port 9334 --theme-dir ... --watch
   python3 injector-hermes.py --port 9334 --remove
   python3 injector-hermes.py --port 9334 --probe-only
@@ -887,7 +887,7 @@ async def run_injector(port: int, theme_dir: str, css_path: str, selectors_path:
 
     # Resolve paths
     if not theme_dir:
-        theme_dir = str(root / "runtime" / "themes-hermes" / "linda")
+        theme_dir = str(root / "runtime" / "themes-hermes" / "ada-sofa")
     if not css_path:
         css_path = str(root / "runtime" / "hermes-skin.css")
     if not selectors_path:

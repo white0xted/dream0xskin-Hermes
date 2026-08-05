@@ -18,3 +18,9 @@ node_modules/
 
 # Development assets (not shipped)
 prototype/
+
+# Python cache
+__pycache__/
+
+# Local theme copies (dev mode creates these in cwd)
+themes/

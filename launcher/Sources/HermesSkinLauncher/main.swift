@@ -37,7 +37,7 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
     private var injectorProcess: Process?
     private let fileManager = FileManager.default
     private let port = 9334
-    private var selectedTheme = "linda"
+    private var selectedTheme = "ada-sofa"
 
     // SF Symbol menu bar icon (vector, auto-adapts to light/dark)
     private lazy var menuBarIcon: NSImage? = {
@@ -108,26 +108,63 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
 
     // MARK: - Theme management
 
-    private func themesRoot(for root: URL) -> URL {
+    /// User themes live in ~/Documents/Hermes Skin/themes/ — persistent
+    /// across app updates. Built-in themes (ada-sofa) stay read-only in
+    /// the .app bundle as a permanent fallback. availableThemes() merges
+    /// both sources; user dir takes priority on id collision.
+    private lazy var userThemesRoot: URL = {
+        fileManager.homeDirectoryForCurrentUser
+            .appendingPathComponent("Documents/Hermes Skin/themes", isDirectory: true)
+    }()
+
+    /// Read-only built-in themes shipped inside the .app bundle.
+    private func bundledThemesRoot(for root: URL) -> URL {
         root.appendingPathComponent("runtime/themes-hermes", isDirectory: true)
     }
 
+    /// Ensure the user themes directory exists (created on demand).
+    private func ensureUserThemesDir() {
+        if !fileManager.fileExists(atPath: userThemesRoot.path) {
+            try? fileManager.createDirectory(at: userThemesRoot, withIntermediateDirectories: true)
+        }
+    }
+
+    /// Merge built-in and user themes. User themes override built-in on
+    /// id collision (so users can customize a copy). Returns (id, name)
+    /// pairs sorted by name.
     private func availableThemes() -> [(id: String, name: String)] {
         guard let root = engineRoot else { return [] }
-        let themesDir = themesRoot(for: root)
-        guard let entries = try? fileManager.contentsOfDirectory(
-            at: themesDir, includingPropertiesForKeys: [.isDirectoryKey]) else { return [] }
-        var themes: [(String, String)] = []
-        for dir in entries.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
-            let themeJson = dir.appendingPathComponent("theme.json")
-            guard fileManager.fileExists(atPath: themeJson.path),
-                  let data = try? Data(contentsOf: themeJson),
-                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let id = json["id"] as? String else { continue }
-            let name = (json["name"] as? String) ?? id
-            themes.append((id, name))
+        ensureUserThemesDir()
+        var byId: [String: (name: String, isUser: Bool)] = [:]
+        // 1. Built-in themes (lower priority)
+        let bundledDir = bundledThemesRoot(for: root)
+        if let entries = try? fileManager.contentsOfDirectory(at: bundledDir, includingPropertiesForKeys: [.isDirectoryKey]) {
+            for dir in entries.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
+                guard let pair = parseTheme(at: dir) else { continue }
+                byId[pair.id] = (pair.name, false)
+            }
         }
-        return themes
+        // 2. User themes (higher priority — override built-in)
+        if let entries = try? fileManager.contentsOfDirectory(at: userThemesRoot, includingPropertiesForKeys: [.isDirectoryKey]) {
+            for dir in entries.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
+                guard let pair = parseTheme(at: dir) else { continue }
+                byId[pair.id] = (pair.name, true)
+            }
+        }
+        return byId.values.map { ($0.name, $0.name) }.isEmpty
+            ? []
+            : byId.sorted { $0.value.name < $1.value.name }.map { ($0.key, $0.value.name) }
+    }
+
+    /// Parse a theme directory and return (id, name) if valid.
+    private func parseTheme(at dir: URL) -> (id: String, name: String)? {
+        let themeJson = dir.appendingPathComponent("theme.json")
+        guard fileManager.fileExists(atPath: themeJson.path),
+              let data = try? Data(contentsOf: themeJson),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let id = json["id"] as? String else { return nil }
+        let name = (json["name"] as? String) ?? id
+        return (id, name)
     }
 
     private func loadSelectedTheme() {
@@ -143,8 +180,23 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
         try? selectedTheme.write(to: file, atomically: true, encoding: .utf8)
     }
 
+    /// Resolve the theme directory: check user dir first, fall back to
+    /// the built-in bundled copy. This way ada-sofa always resolves even
+    /// if the user deleted it from ~/Documents.
     private func themeDirPath(for root: URL) -> String {
-        root.appendingPathComponent("runtime/themes-hermes/\(selectedTheme)").path
+        let userDir = userThemesRoot.appendingPathComponent(selectedTheme)
+        if fileManager.fileExists(atPath: userDir.appendingPathComponent("theme.json").path) {
+            return userDir.path
+        }
+        // Fall back to built-in
+        return bundledThemesRoot(for: root).appendingPathComponent(selectedTheme).path
+    }
+
+    /// The root to use for theme CRUD (create/delete/rename): always the
+    /// user directory — built-in themes are read-only.
+    private func themesRoot(for root: URL) -> URL {
+        ensureUserThemesDir()
+        return userThemesRoot
     }
 
     // MARK: - Theme color extraction (image-based theme generation)
@@ -330,6 +382,12 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
         let themes = availableThemes()
         guard themes.count > 1 else { showError("至少需要保留一个主题。") ; return }
         guard let selection = themeSelectionDialog(title: "删除主题", message: "选择要删除的主题") else { return }
+        // Built-in themes cannot be deleted
+        let bundledDir = bundledThemesRoot(for: root).appendingPathComponent(selection.id)
+        if fileManager.fileExists(atPath: bundledDir.appendingPathComponent("theme.json").path) {
+            showError("内置主题「\(selection.name)」无法删除。")
+            return
+        }
         let themesRootURL = themesRoot(for: root)
         let themeDir = themesRootURL.appendingPathComponent(selection.id)
         let alert = NSAlert()
@@ -341,7 +399,7 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         try? fileManager.removeItem(at: themeDir)
         if selectedTheme == selection.id {
-            selectedTheme = themes.first(where: { $0.id != selection.id })?.id ?? "linda"
+            selectedTheme = themes.first(where: { $0.id != selection.id })?.id ?? "ada-sofa"
             saveSelectedTheme()
             if cdpAvailable() {
                 restartInjectorAsync()
