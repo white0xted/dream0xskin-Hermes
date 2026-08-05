@@ -198,21 +198,25 @@ html.hermes-skin-active .relative[class*="h-[34px]"] {
   -webkit-backdrop-filter: none !important;
 }
 
-/* Background-tasks strip above the composer (aui_background-resume):
-   match the composer surface's frosted glass so the task strip and
-   the input box read as one consistent surface. Uses the same
-   --hs-immersive-composer variable + blur so both stay in sync. */
-html.hermes-skin-active [data-slot="aui_background-resume"] {
+/* Background-tasks strip above the composer: the real element is a
+   button inside composer-dock with class rounded-t-2xl bg-(--composer-fill)
+   backdrop-blur-[0.75rem] — it has NO data-slot (aui_background-resume
+   never matched). Match the composer surface's frosted glass so the
+   task strip and the input box read as one consistent surface. Uses
+   the same --hs-immersive-composer variable + blur so both stay sync. */
+html.hermes-skin-active
+  [data-slot="composer-dock"] [class*="rounded-t-2xl"] {
   background: var(--hs-immersive-composer) !important;
   border: 1px solid rgb(var(--hs-muted-rgb) / .18) !important;
-  border-radius: 9999px !important;
+  border-radius: 16px !important;
   backdrop-filter: blur(20px) saturate(1.15) !important;
   -webkit-backdrop-filter: blur(20px) saturate(1.15) !important;
   box-shadow: 0 10px 30px rgb(var(--hs-bg-rgb) / .20) !important;
   color: rgb(var(--hs-text-rgb) / .92) !important;
 }
 
-html.hermes-skin-active [data-slot="aui_background-resume"] svg {
+html.hermes-skin-active
+  [data-slot="composer-dock"] [class*="rounded-t-2xl"] svg {
   color: rgb(var(--hs-accent-rgb) / .9) !important;
 }
 
