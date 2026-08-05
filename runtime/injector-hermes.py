@@ -659,7 +659,38 @@ def build_renderer_script(css_text: str, art_data_url, theme: dict, selectors: d
       applyArtMetadata(el);
       document.body.style.setProperty("background-color", "transparent", "important");
     }}
+    injectBranding();
     return healed;
+  }}
+
+  // ─── Dream0xSkin branding badge ────────────────────────────
+  // Inject a real DOM element above the HERMES AGENT title on the
+  // welcome screen.  CSS ::before is unreliable on dynamically
+  // inserted DOM in some Electron builds, so we use a JS-injected
+  // <span> with an MutationObserver to catch the intro appearing.
+  const BRAND_ID = "hs-brand-badge";
+  const BRAND_TEXT = (THEME.name || "Dream0xSkin") + " \\u00B7 Powered by Dream0xSkin";
+
+  function injectBranding() {{
+    const intro = document.querySelector('[data-slot="aui_intro"]');
+    if (!intro) return;
+    const innerDiv = intro.querySelector(":scope > div");
+    if (!innerDiv) return;
+    if (innerDiv.querySelector("#" + BRAND_ID)) return;  // already there
+
+    const badge = document.createElement("span");
+    badge.id = BRAND_ID;
+    badge.textContent = BRAND_TEXT;
+    badge.setAttribute("style",
+      "display:block;width:100%;text-align:center;" +
+      "font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',system-ui,sans-serif;" +
+      "font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;" +
+      "color:rgb(var(--hs-accent-rgb) / .72);" +
+      "margin-bottom:0.75rem;" +
+      "text-shadow:0 1px 3px rgb(var(--hs-bg-rgb) / .88),0 0 12px rgb(var(--hs-bg-rgb) / .50);" +
+      "pointer-events:none;"
+    );
+    innerDiv.insertBefore(badge, innerDiv.firstChild);
   }}
 
   // ─── MutationObserver for SPA DOM rebuilds ─────────────────
@@ -699,6 +730,7 @@ def build_renderer_script(css_text: str, art_data_url, theme: dict, selectors: d
     if (analysisTimer) {{ clearTimeout(analysisTimer); analysisTimer = null; }}
     document.getElementById(ROOT_ID)?.remove();
     document.getElementById(STYLE_ID)?.remove();
+    document.getElementById(BRAND_ID)?.remove();
     const el = document.documentElement;
     el.classList.remove(ACTIVE_CLASS);
     for (const name of ROOT_ATTRS) el.removeAttribute(name);
