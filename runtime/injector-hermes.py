@@ -441,12 +441,12 @@ def build_renderer_script(css_text: str, art_data_url, theme: dict, selectors: d
 
     // Immersive mode panel opacity (thin glass, codex aesthetics;
     // extra-thin now — reading cards carry content legibility)
-    setStyleProperty(el, "--hs-immersive-edge", "rgb(var(--hs-bg-rgb) / .28)");
-    setStyleProperty(el, "--hs-immersive-mid", "rgb(var(--hs-bg-rgb) / .18)");
-    setStyleProperty(el, "--hs-immersive-far", "rgb(var(--hs-bg-rgb) / .10)");
-    setStyleProperty(el, "--hs-immersive-sidebar", "rgb(var(--hs-panel-rgb) / .32)");
-    setStyleProperty(el, "--hs-immersive-composer", "rgb(var(--hs-panel-2-rgb) / .45)");
-    setStyleProperty(el, "--hs-immersive-line", "rgb(var(--hs-muted-rgb) / .42)");
+    setStyleProperty(el, "--hs-immersive-edge", "rgb(var(--hs-bg-rgb) / .20)");
+    setStyleProperty(el, "--hs-immersive-mid", "rgb(var(--hs-bg-rgb) / .12)");
+    setStyleProperty(el, "--hs-immersive-far", "rgb(var(--hs-bg-rgb) / .06)");
+    setStyleProperty(el, "--hs-immersive-sidebar", "rgb(var(--hs-panel-rgb) / .22)");
+    setStyleProperty(el, "--hs-immersive-composer", "rgb(var(--hs-panel-2-rgb) / .32)");
+    setStyleProperty(el, "--hs-immersive-line", "rgb(var(--hs-muted-rgb) / .34)");
   }};
 
   // ─── Apply art metadata (focus, safe-area, immersive) ──────
@@ -668,8 +668,15 @@ def build_renderer_script(css_text: str, art_data_url, theme: dict, selectors: d
   // welcome screen.  CSS ::before is unreliable on dynamically
   // inserted DOM in some Electron builds, so we use a JS-injected
   // <span> with an MutationObserver to catch the intro appearing.
+  // Nothing here is hardcoded to a specific theme:
+  //   - label: THEME.brandSubtitle (the launcher writes the theme
+  //     name in uppercase there when a theme is created), falling
+  //     back to THEME.name
+  //   - color: var(--hs-accent-rgb) — the active theme's accent
+  //     triple set by applyTheme() (theme.json colors, or the
+  //     art-derived adaptive palette when the theme has no accent)
   const BRAND_ID = "hs-brand-badge";
-  const BRAND_TEXT = (THEME.name || "Dream0xSkin") + " \\u00B7 Powered by Dream0xSkin";
+  const BRAND_TEXT = (THEME.brandSubtitle || THEME.name || "Dream0xSkin") + " \\u00B7 Powered by Dream0xSkin";
 
   function injectBranding() {{
     const intro = document.querySelector('[data-slot="aui_intro"]');
@@ -681,10 +688,13 @@ def build_renderer_script(css_text: str, art_data_url, theme: dict, selectors: d
     const badge = document.createElement("span");
     badge.id = BRAND_ID;
     badge.textContent = BRAND_TEXT;
+    // Entrance animation lives in hermes-skin.css (#hs-brand-badge) so it
+    // can be themed/reduced-motion aware; the keyframes are the only place
+    // that ever sets opacity 0, so a broken animation never hides the badge.
     badge.setAttribute("style",
       "display:block;width:100%;text-align:center;" +
       "font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','PingFang SC',system-ui,sans-serif;" +
-      "font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;" +
+      "font-size:13px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;" +
       "color:rgb(var(--hs-accent-rgb) / .72);" +
       "margin-bottom:0.75rem;" +
       "text-shadow:0 1px 3px rgb(var(--hs-bg-rgb) / .88),0 0 12px rgb(var(--hs-bg-rgb) / .50);" +

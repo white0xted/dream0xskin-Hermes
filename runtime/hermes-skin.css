@@ -186,13 +186,11 @@ html.hermes-skin-active [data-slot="composer-surface"] {
   color: var(--hs-text) !important;
 }
 
-/* === Title bar: subtle frosted === */
-html.hermes-skin-active .relative.h-\\[34px\\] {
-  background: rgb(var(--hs-bg-rgb) / .82) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  border-bottom: 1px solid var(--hs-line) !important;
-}
+/* === Title bar: transparent (immersive) ===
+   No skin styling here — the top bar stays fully transparent so the
+   wallpaper flows through under the window controls. A previous rule
+   (.relative.h-\[34px\]) painted it dark frosted; the user rejected
+   that as immersion-breaking, so the rule is removed entirely. */
 
 /* === Text adjustments === */
 html.hermes-skin-active [data-slot="composer-rich-input"] {
@@ -251,7 +249,12 @@ html.hermes-skin-active [data-slot="aui_thread-content"] {
 
 /* === Body: always carries the art (unified mode) === */
 html.hermes-skin-active body {
-  background-image: var(--hs-art) !important;
+  /* Art carries a faint white lift so the wallpaper reads brighter
+     through the glass (the theme image itself is dark). This is a
+     background layer only — it never touches text rendering. */
+  background-image:
+    linear-gradient(rgb(255 255 255 / .08) 0 0),
+    var(--hs-art) !important;
   background-position: var(--hs-art-position) !important;
   background-size: cover !important;
   background-repeat: no-repeat !important;
@@ -265,8 +268,8 @@ html.hermes-skin-active [data-slot="sidebar"] {
     var(--hs-immersive-edge) 100%) !important;
   border: 0 !important;
   box-shadow: none !important;
-  backdrop-filter: blur(20px) saturate(1.2) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+  backdrop-filter: blur(24px) saturate(1.25) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.25) !important;
 }
 
 /* === Composer: frosted glass input === */
@@ -277,8 +280,8 @@ html.hermes-skin-active [data-slot="composer-surface"] {
     0 10px 30px rgb(var(--hs-bg-rgb) / .20),
     inset 0 0 0 1px var(--hs-immersive-line),
     inset 0 1px rgb(var(--hs-text-rgb) / .12) !important;
-  backdrop-filter: blur(16px) saturate(1.1) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(1.1) !important;
+  backdrop-filter: blur(20px) saturate(1.15) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.15) !important;
 }
 
 /* === Markdown text shadow for readability over art === */
@@ -295,9 +298,9 @@ html.hermes-skin-active
    text vanishes over the art. Give it its own frosted glass + text
    shadow so Gateway/Cron/Session/tok/model info stays legible. */
 html.hermes-skin-active [data-slot="statusbar"] {
-  background: rgb(var(--hs-bg-rgb) / .72) !important;
-  backdrop-filter: blur(16px) saturate(1.2) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
+  background: rgb(var(--hs-bg-rgb) / .56) !important;
+  backdrop-filter: blur(20px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
   border-top: 1px solid var(--hs-line) !important;
   color: rgb(var(--hs-text-rgb) / .82) !important;
 }
@@ -312,9 +315,25 @@ html.hermes-skin-active [data-slot="statusbar"] [role="button"]:hover {
   color: var(--hs-text) !important;
 }
 
-/* === Intro branding: handled by JS DOM injection in renderer === */
-/* (CSS ::before was unreliable on Electron; see injectBranding() in
-   injector-hermes.py) */
+/* === Intro branding: JS-injected <span id="hs-brand-badge"> ===
+   The badge itself is created by injectBranding() in
+   injector-hermes.py (CSS ::before was unreliable on Electron).
+
+   Restored entrance animation from the original branding design
+   (fade-in + 4px rise). The badge is a real DOM element so CSS
+   animations on it are reliable — the earlier failure was specific
+   to ::before pseudo-elements of dynamically-inserted nodes.
+   fill-mode 'both' makes the delay hold the from-state; opacity 0
+   exists ONLY inside the keyframes, so if animations are disabled
+   or unsupported the badge simply renders statically visible. */
+html.hermes-skin-active #hs-brand-badge {
+  animation: hs-brand-fade-in .8s ease-out .3s both;
+}
+
+@keyframes hs-brand-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 /* === Dialog / Modal / Popover readability ===
    Hermes has two overlay systems:
@@ -349,7 +368,7 @@ html.hermes-skin-active [class*="bg-(--ui-chat-bubble-background)"] {
   background-color: rgb(var(--hs-panel-rgb)) !important;
 }
 
-html.hermes-skin-active [class*="bg-(--ui-chat-surface-background)"]:not([data-slot="composer-bounds"]):not([data-chat-surface]) {
+html.hermes-skin-active [class*="bg-(--ui-chat-surface-background)"]:not([data-slot="composer-bounds"]):not([data-chat-surface]):not([data-slot="aui_user-message-root"]) {
   background-color: rgb(var(--hs-panel-rgb)) !important;
 }
 
@@ -397,14 +416,20 @@ html.hermes-skin-active ::-webkit-scrollbar-track {
   background: transparent;
 }
 
-/* === User message bubble === */
+/* === User message bubble ===
+   The real bubble carries class bg-(--dt-user-bubble); the container
+   (aui_user-message-root, class group/user-message) and the hover
+   reply chip (group-hover/user-message) both contain "user" but must
+   NOT get bubble chrome — the container is kept transparent and the
+   chip keeps its native hover background. Match the bubble class
+   directly instead of the loose [class*="user"] substring. */
 html.hermes-skin-active [data-slot="aui_thread-content"] [class*="bubble"],
-html.hermes-skin-active [data-slot="aui_thread-content"] [class*="user"] {
-  background: rgb(var(--hs-panel-rgb) / .88) !important;
+html.hermes-skin-active [data-slot="aui_thread-content"] [class*="bg-(--dt-user-bubble)"] {
+  background: rgb(var(--hs-panel-rgb) / .78) !important;
   border: 1px solid rgb(var(--hs-muted-rgb) / .12) !important;
   border-radius: 16px !important;
   box-shadow: 0 8px 24px rgb(var(--hs-bg-rgb) / .10) !important;
-  backdrop-filter: blur(7px) saturate(1.05) !important;
+  backdrop-filter: blur(10px) saturate(1.08) !important;
 }
 
 /* === Turn pair: light readability card over the background art ===
@@ -462,10 +487,10 @@ html.hermes-skin-active [data-slot="aui_assistant-message-content"] {
    assistant reading cards only need a whisper of tint (text-shadow
    does the heavy lifting there). */
 html.hermes-skin-active [data-slot="aui_assistant-message-root"] {
-  background: rgb(var(--hs-bg-rgb) / .12) !important;
+  background: rgb(var(--hs-bg-rgb) / .08) !important;
   border-color: rgb(var(--hs-muted-rgb) / .08) !important;
-  backdrop-filter: blur(6px) saturate(1.04) !important;
-  -webkit-backdrop-filter: blur(6px) saturate(1.04) !important;
+  backdrop-filter: blur(10px) saturate(1.06) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(1.06) !important;
 }
 
 /* === Thinking / reasoning disclosure ===
