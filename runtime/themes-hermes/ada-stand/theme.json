@@ -1,0 +1,28 @@
+{
+  "appearance" : "dark",
+  "art" : {
+    "focusX" : "50%",
+    "focusY" : "35%",
+    "safeArea" : "72%",
+    "taskMode" : "dim"
+  },
+  "brandSubtitle" : "ADA STAND",
+  "colors" : {
+    "accent" : "#fdb874",
+    "accentAlt" : "#cf965f",
+    "background" : "#1a120e",
+    "highlight" : "#fdb874",
+    "line" : "rgba(253, 184, 116, .18)",
+    "muted" : "#665e5b",
+    "panel" : "#211a16",
+    "panelAlt" : "#29211d",
+    "secondary" : "#38312d",
+    "text" : "#e8e6e0"
+  },
+  "id" : "ada-stand",
+  "image" : "ada-stand.png",
+  "name" : "Ada Stand",
+  "quote" : "",
+  "schemaVersion" : 1,
+  "tagline" : ""
+}

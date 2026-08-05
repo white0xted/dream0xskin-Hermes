@@ -35,7 +35,8 @@
 
 | Theme | Character | Description | Palette |
 |---|---|---|---|
-| Ada Sofa | **Ada** — a high elf with a cybernetic leg in a baroque library / 装有赛博义肢的高等精灵，巴洛克书房 | Warm dark + gold / 暖暗 + 金 | `#080706` / `#ec963d` |
+| Ada Sofa | **Ada** - a high elf with a cybernetic leg in a baroque library / 装有赛博义肢的高等精灵，巴洛克书房 | Warm dark + gold / 暖暗 + 金 | `#080706` / `#ec963d` |
+| Ada Stand | **Ada** - standing on coastal rocks at golden hour / 黄金时刻立于海岸礁石 | Warm sunset + amber / 暖夕阳 + 琥珀 | `#1a120e` / `#fdb874` |
 
 > Create your own themes by adding a new directory under `runtime/themes-hermes/` with a `theme.json` and a background image.
 >
@@ -111,6 +112,9 @@ dream0xskin-Hermes/
 │       ├── ada-sofa/
 │       │   ├── theme.json            # Colors, art metadata, safe-area config
 │       │   └── ada-sofa.png          # Background artwork
+│       └── ada-stand/
+│           ├── theme.json            # Colors, art metadata, safe-area config
+│           └── ada-stand.png         # Background artwork
 ├── launcher/                          # Swift menu bar app / Swift 菜单栏应用
 │   ├── Sources/HermesSkinLauncher/main.swift
 │   ├── Package.swift
