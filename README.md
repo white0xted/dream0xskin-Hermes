@@ -8,15 +8,15 @@
 
 ![dream0xskin-Hermes demo](docs/demo.png)
 
-> The character **Ada** - a high elf with a cybernetic leg, seated in an opulent baroque library, rendered in warm gold and deep shadow. The default theme that ships with dream0xskin-Hermes.
+> **Example 1** - Ada Sofa, the default built-in theme.
 >
-> 角色形象 **Ada** - 一位装有赛博机械义肢的高等精灵，端坐于华丽的巴洛克书房中，以暖金与深沉阴影呈现。dream0xskin-Hermes 的默认主题。
+> **示例 1** - Ada Sofa，默认内置主题。
 
 ![dream0xskin-Hermes demo - Aura Stand](docs/demo-aura-stand.png)
 
-> **Aura Stand** - the same high elf standing on coastal rocks at golden hour, holographic halo shimmering above, iridescent robes catching the sunset. A user-created theme showing the immersive frosted-glass effect over a vivid landscape.
+> **Example 2** - Ada Stand, the second built-in theme.
 >
-> **Aura Stand** - 同一位高等精灵在黄金时刻立于海岸礁石之上，幻彩圣光环悬浮于头顶，镭射长袍映照夕阳余晖。用户自定义主题，展示沉浸式毛玻璃效果与生动风景背景的融合。
+> **示例 2** - Ada Stand，第二个内置主题。
 
 ---
 
@@ -38,9 +38,13 @@
 | Ada Sofa | **Ada** - a high elf with a cybernetic leg in a baroque library / 装有赛博义肢的高等精灵，巴洛克书房 | Warm dark + gold / 暖暗 + 金 | `#080706` / `#ec963d` |
 | Ada Stand | **Ada** - standing on coastal rocks at golden hour / 黄金时刻立于海岸礁石 | Warm sunset + amber / 暖夕阳 + 琥珀 | `#1a120e` / `#fdb874` |
 
-> Create your own themes by adding a new directory under `runtime/themes-hermes/` with a `theme.json` and a background image.
+> Create your own themes via the launcher menu bar icon → **"新建主题"** (New Theme). User-created themes are stored in `~/Documents/Hermes Skin/themes/` and persist across app updates. Built-in themes (Ada Sofa, Ada Stand) are read-only and always available as fallback.
 >
-> 在 `runtime/themes-hermes/` 下新建目录，放入 `theme.json` 和背景图即可创建自定义主题。
+> ⚠️ If you reinstall the app, back up `~/Documents/Hermes Skin/themes/` first to avoid losing your custom themes.
+>
+> 通过菜单栏图标 → **「新建主题」** 创建自定义主题。用户主题保存在 `~/Documents/Hermes Skin/themes/`，跨应用更新持久保留。内置主题（Ada Sofa、Ada Stand）为只读，始终作为默认可用。
+>
+> ⚠️ 重装应用前请备份 `~/Documents/Hermes Skin/themes/`，以免丢失自定义主题。
 
 ## 🚀 Installation / 安装
 
