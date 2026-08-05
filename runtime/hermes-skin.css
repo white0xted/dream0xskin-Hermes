@@ -313,6 +313,29 @@ html.hermes-skin-active[data-hs-art-wide="true"]
     0 0 10px rgb(var(--hs-bg-rgb) / .46);
 }
 
+/* === Status bar (bottom global footer)
+   Hermes renders this with bg-(--ui-sidebar-surface-background) which
+   we made transparent via --theme-sidebar-seed. The 54%-white tertiary
+   text vanishes over the art. Give it its own frosted glass + text
+   shadow so Gateway/Cron/Session/tok/model info stays legible. */
+html.hermes-skin-active [data-slot="statusbar"] {
+  background: rgb(var(--hs-bg-rgb) / .72) !important;
+  backdrop-filter: blur(16px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
+  border-top: 1px solid var(--hs-line) !important;
+  color: rgb(var(--hs-text-rgb) / .82) !important;
+}
+
+html.hermes-skin-active [data-slot="statusbar"] * {
+  text-shadow: 0 1px 2px rgb(var(--hs-bg-rgb) / .80) !important;
+}
+
+html.hermes-skin-active [data-slot="statusbar"] button:hover,
+html.hermes-skin-active [data-slot="statusbar"] [role="button"]:hover {
+  background: rgb(var(--hs-accent-rgb) / .14) !important;
+  color: var(--hs-text) !important;
+}
+
 /* === Scrollbar styling === */
 html.hermes-skin-active ::-webkit-scrollbar {
   width: 6px;
