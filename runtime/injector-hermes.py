@@ -459,7 +459,7 @@ def build_renderer_script(css_text: str, art_data_url, theme: dict, selectors: d
       : (profile?.focusX ?? (safeArea === "left" ? 0.72 : safeArea === "right" ? 0.28 : 0.5));
     const focusY = (typeof ART.focusY === "number") ? ART.focusY : (profile?.focusY ?? 0.5);
     const taskMode = (ART.taskMode && ART.taskMode !== "auto") ? ART.taskMode : (profile?.taskMode || "ambient");
-    const wide = profile?.wide || false;
+    const wide = true;  // Always use body background for art (unified mode)
     const aspect = profile?.aspect || "unknown";
     const fx = (clamp(focusX, 0, 1) * 100).toFixed(2) + "%";
     const fy = (clamp(focusY, 0, 1) * 100).toFixed(2) + "%";

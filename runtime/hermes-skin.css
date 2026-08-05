@@ -222,31 +222,21 @@ html.hermes-skin-active [data-slot="sidebar-menu-item"][data-active="true"] {
   box-shadow: 0 4px 16px rgb(var(--hs-bg-rgb) / .12) !important;
 }
 
-/* === Main content area: scrim + art === */
+/* === Main content area === */
 html.hermes-skin-active [data-slot="composer-bounds"] {
   position: relative !important;
   isolation: isolate;
   overflow: hidden !important;
 }
 
-html.hermes-skin-active:not([data-hs-art-wide="true"])
-  [data-slot="composer-bounds"]::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image: var(--hs-task-fade), var(--hs-task-shade), var(--hs-art);
-  background-repeat: no-repeat;
-  background-position: center, center, var(--hs-art-position);
-  background-size: 100% 100%, 100% 100%, cover;
-  opacity: .78;
-}
-
-html.hermes-skin-active:not([data-hs-art-wide="true"])
-  [data-slot="composer-bounds"] > * {
-  position: relative;
-  z-index: 1;
+/* composer-bounds: thin tinted glass (NOT art carrier) */
+html.hermes-skin-active [data-slot="composer-bounds"] {
+  background: linear-gradient(90deg,
+    var(--hs-immersive-edge),
+    var(--hs-immersive-mid) 64%,
+    var(--hs-immersive-far)) !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
 /* === Thread viewport: transparent to show art === */
@@ -259,8 +249,8 @@ html.hermes-skin-active [data-slot="aui_thread-content"] {
   color: var(--hs-text) !important;
 }
 
-/* === Immersive mode: wide image as full body background === */
-html.hermes-skin-active[data-hs-art-wide="true"] body {
+/* === Body: always carries the art (unified mode) === */
+html.hermes-skin-active body {
   background-image: var(--hs-art) !important;
   background-position: var(--hs-art-position) !important;
   background-size: cover !important;
@@ -268,7 +258,8 @@ html.hermes-skin-active[data-hs-art-wide="true"] body {
   background-attachment: fixed !important;
 }
 
-html.hermes-skin-active[data-hs-art-wide="true"] [data-slot="sidebar"] {
+/* === Sidebar: frosted glass panel === */
+html.hermes-skin-active [data-slot="sidebar"] {
   background: linear-gradient(90deg,
     var(--hs-immersive-sidebar),
     var(--hs-immersive-edge) 100%) !important;
@@ -278,23 +269,8 @@ html.hermes-skin-active[data-hs-art-wide="true"] [data-slot="sidebar"] {
   -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
 }
 
-html.hermes-skin-active[data-hs-art-wide="true"]
-  [data-slot="composer-bounds"]::before {
-  content: none;
-}
-
-html.hermes-skin-active[data-hs-art-wide="true"]
-  [data-slot="composer-bounds"] {
-  background: linear-gradient(90deg,
-    var(--hs-immersive-edge),
-    var(--hs-immersive-mid) 64%,
-    var(--hs-immersive-far)) !important;
-  border: 0 !important;
-  box-shadow: none !important;
-}
-
-html.hermes-skin-active[data-hs-art-wide="true"]
-  [data-slot="composer-surface"] {
+/* === Composer: frosted glass input === */
+html.hermes-skin-active [data-slot="composer-surface"] {
   background: var(--hs-immersive-composer) !important;
   border: 0 !important;
   box-shadow:
@@ -306,7 +282,7 @@ html.hermes-skin-active[data-hs-art-wide="true"]
 }
 
 /* === Markdown text shadow for readability over art === */
-html.hermes-skin-active[data-hs-art-wide="true"]
+html.hermes-skin-active
   [data-slot="aui_thread-content"] {
   text-shadow:
     0 1px 2px rgb(var(--hs-bg-rgb) / .82),
@@ -351,9 +327,9 @@ html.hermes-skin-active [data-slot="statusbar"] [role="button"]:hover {
       which we set to semi-transparent. Fix: darken overlay + solid
       content background. */
 
-/* All full-screen overlays (both setup and Radix) */
-html.hermes-skin-active [class*="fixed inset-0 z-("],
-html.hermes-skin-active [style*="position: fixed"][style*="inset: 0"] {
+/* All full-screen overlays (both setup and Radix) - exclude hermes-skin-root */
+html.hermes-skin-active [class*="fixed inset-0 z-("]:not(#hermes-skin-root),
+html.hermes-skin-active [style*="position: fixed"][style*="inset: 0"]:not(#hermes-skin-root) {
   background-color: rgb(var(--hs-bg-rgb) / .88) !important;
   backdrop-filter: blur(16px) saturate(1.2) !important;
   -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
@@ -366,9 +342,14 @@ html.hermes-skin-active [class*="bg-black/15"][class*="backdrop-blur"] {
   -webkit-backdrop-filter: blur(12px) saturate(1.15) !important;
 }
 
-/* Dialog content panels: force opaque background */
-html.hermes-skin-active [class*="bg-(--ui-chat-bubble-background)"],
-html.hermes-skin-active [class*="bg-(--ui-chat-surface-background)"] {
+/* Dialog content panels: force opaque background - but NOT composer-bounds
+   or data-chat-surface (they use bg-(--ui-chat-surface-background) but
+   need to stay transparent to show body art) */
+html.hermes-skin-active [class*="bg-(--ui-chat-bubble-background)"] {
+  background-color: rgb(var(--hs-panel-rgb)) !important;
+}
+
+html.hermes-skin-active [class*="bg-(--ui-chat-surface-background)"]:not([data-slot="composer-bounds"]):not([data-chat-surface]) {
   background-color: rgb(var(--hs-panel-rgb)) !important;
 }
 
@@ -477,10 +458,10 @@ html.hermes-skin-active [data-slot="aui_assistant-message-content"] {
     0 0 14px rgb(var(--hs-bg-rgb) / .50) !important;
 }
 
-/* In immersive wide mode the body itself carries the art and the
+/* In immersive mode the body carries the art and the
    assistant reading cards only need a whisper of tint (text-shadow
    does the heavy lifting there). */
-html.hermes-skin-active[data-hs-art-wide="true"] [data-slot="aui_assistant-message-root"] {
+html.hermes-skin-active [data-slot="aui_assistant-message-root"] {
   background: rgb(var(--hs-bg-rgb) / .12) !important;
   border-color: rgb(var(--hs-muted-rgb) / .08) !important;
   backdrop-filter: blur(6px) saturate(1.04) !important;
