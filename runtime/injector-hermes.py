@@ -440,11 +440,11 @@ def build_renderer_script(css_text: str, art_data_url, theme: dict, selectors: d
       "linear-gradient(90deg, rgb(var(--hs-bg-rgb) / .56) 0%, rgb(var(--hs-bg-rgb) / .36) 48%, rgb(var(--hs-bg-rgb) / .12) 100%)");
 
     // Immersive mode panel opacity (thin glass, codex aesthetics;
-    // extra-thin now — reading cards carry content legibility)
-    setStyleProperty(el, "--hs-immersive-edge", "rgb(var(--hs-bg-rgb) / .20)");
-    setStyleProperty(el, "--hs-immersive-mid", "rgb(var(--hs-bg-rgb) / .12)");
-    setStyleProperty(el, "--hs-immersive-far", "rgb(var(--hs-bg-rgb) / .06)");
-    setStyleProperty(el, "--hs-immersive-sidebar", "rgb(var(--hs-panel-rgb) / .22)");
+    // extra-thin now - reading cards carry content legibility
+    setStyleProperty(el, "--hs-immersive-edge", "rgb(var(--hs-bg-rgb) / .10)");
+    setStyleProperty(el, "--hs-immersive-mid", "rgb(var(--hs-bg-rgb) / .06)");
+    setStyleProperty(el, "--hs-immersive-far", "rgb(var(--hs-bg-rgb) / .03)");
+    setStyleProperty(el, "--hs-immersive-sidebar", "rgb(var(--hs-panel-rgb) / .20)");
     setStyleProperty(el, "--hs-immersive-composer", "rgb(var(--hs-panel-2-rgb) / .32)");
     setStyleProperty(el, "--hs-immersive-line", "rgb(var(--hs-muted-rgb) / .34)");
   }};

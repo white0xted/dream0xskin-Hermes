@@ -64,10 +64,10 @@ html.hermes-skin-active {
      handled by text-shadow, not by darkening the glass.
      Even thinner now: streaming content carries its own frosted
      reading cards, so the base glass only needs a whisper. */
-  --hs-immersive-edge: rgb(var(--hs-bg-rgb) / .28);
-  --hs-immersive-mid: rgb(var(--hs-bg-rgb) / .18);
-  --hs-immersive-far: rgb(var(--hs-bg-rgb) / .10);
-  --hs-immersive-sidebar: rgb(var(--hs-panel-rgb) / .32);
+  --hs-immersive-edge: rgb(var(--hs-bg-rgb) / .10);
+  --hs-immersive-mid: rgb(var(--hs-bg-rgb) / .06);
+  --hs-immersive-far: rgb(var(--hs-bg-rgb) / .03);
+  --hs-immersive-sidebar: rgb(var(--hs-panel-rgb) / .20);
   --hs-immersive-composer: rgb(var(--hs-panel-2-rgb) / .45);
   --hs-immersive-line: rgb(var(--hs-muted-rgb) / .42);
 
@@ -186,11 +186,59 @@ html.hermes-skin-active [data-slot="composer-surface"] {
   color: var(--hs-text) !important;
 }
 
-/* === Title bar: transparent (immersive) ===
-   No skin styling here — the top bar stays fully transparent so the
-   wallpaper flows through under the window controls. A previous rule
-   (.relative.h-\[34px\]) painted it dark frosted; the user rejected
-   that as immersion-breaking, so the rule is removed entirely. */
+/* === Title bar: fully transparent (wallpaper as-is) ===
+   No glass, no blur, no lift — the wallpaper shows through the title
+   bar exactly as it renders in the workspace, so the two connect in
+   one continuous piece. Explicit !important guards against the native
+   bg-(--ui-sidebar-surface-background) token re-applying a surface. */
+html.hermes-skin-active .relative[class*="h-[34px]"] {
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Background-tasks strip above the composer (aui_background-resume):
+   native style has NO backing (text floats over the wallpaper) — give
+   it a readable frosted pill like the composer surface. */
+html.hermes-skin-active [data-slot="aui_background-resume"] {
+  background: rgb(var(--hs-panel-rgb) / .58) !important;
+  border: 1px solid rgb(var(--hs-muted-rgb) / .14) !important;
+  border-radius: 9999px !important;
+  backdrop-filter: blur(12px) saturate(1.1) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.1) !important;
+  box-shadow: 0 2px 10px rgb(0 0 0 / .18) !important;
+  color: rgb(var(--hs-text-rgb) / .92) !important;
+}
+
+html.hermes-skin-active [data-slot="aui_background-resume"] svg {
+  color: rgb(var(--hs-accent-rgb) / .9) !important;
+}
+
+/* Right sidebar (file explorer, aside[aria-label="右侧边栏"]): mirror
+   the left sidebar's frosted glass so both columns read as one system.
+   Gradient mirrored: darker at the window's outer edge, lighter toward
+   the center — visually symmetric with the left sidebar. */
+html.hermes-skin-active aside[aria-label="右侧边栏"] {
+  background: linear-gradient(270deg,
+    var(--hs-immersive-sidebar),
+    var(--hs-immersive-edge) 100%) !important;
+  backdrop-filter: blur(24px) saturate(1.25) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.25) !important;
+  border-color: rgb(var(--hs-muted-rgb) / .10) !important;
+  box-shadow: none !important;
+}
+
+/* Right sidebar pane-header (tab bar with "files" label): give it a
+   frosted glass strip matching the sidebar panel so the label and tab
+   icons sit on readable backing, not floating over raw wallpaper.
+   This element is a SIBLING of aside (not inside it), carrying class
+   "group/pane-header" and bg-(--ui-sidebar-surface-background). */
+html.hermes-skin-active [class*="pane-header"] {
+  background: rgb(var(--hs-panel-rgb) / .20) !important;
+  backdrop-filter: blur(20px) saturate(1.15) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.15) !important;
+}
 
 /* === Text adjustments === */
 html.hermes-skin-active [data-slot="composer-rich-input"] {
@@ -227,18 +275,31 @@ html.hermes-skin-active [data-slot="composer-bounds"] {
   overflow: hidden !important;
 }
 
-/* composer-bounds: thin tinted glass (NOT art carrier) */
+/* composer-bounds: fully transparent (no darkening layer)
+   The thread shows the wallpaper uniformly from the title-bar edge
+   down — the previous immersive gradient (.20/.12/.06) darkened the
+   whole main area and produced a brightness seam right below the
+   transparent title bar. Readability is carried by the message
+   reading cards + text shadow. */
 html.hermes-skin-active [data-slot="composer-bounds"] {
-  background: linear-gradient(90deg,
-    var(--hs-immersive-edge),
-    var(--hs-immersive-mid) 64%,
-    var(--hs-immersive-far)) !important;
+  background: transparent !important;
+  background-color: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
 }
 
-/* === Thread viewport: transparent to show art === */
-html.hermes-skin-active [data-slot="aui_thread-viewport"],
+/* === Thread viewport: light frosted blur over art ===
+   The viewport itself stays background-transparent (wallpaper shows
+   through) but gets a gentle backdrop blur so busy wallpaper regions
+   (petals, stone texture) are softened behind the text column. This
+   improves readability without darkening — the art still reads as
+   continuous from the title bar down. */
+html.hermes-skin-active [data-slot="aui_thread-viewport"] {
+  background: transparent !important;
+  backdrop-filter: blur(8px) saturate(1.05) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(1.05) !important;
+}
+
 html.hermes-skin-active [data-slot="aui_thread-content"] {
   background: transparent !important;
 }
@@ -249,12 +310,7 @@ html.hermes-skin-active [data-slot="aui_thread-content"] {
 
 /* === Body: always carries the art (unified mode) === */
 html.hermes-skin-active body {
-  /* Art carries a faint white lift so the wallpaper reads brighter
-     through the glass (the theme image itself is dark). This is a
-     background layer only — it never touches text rendering. */
-  background-image:
-    linear-gradient(rgb(255 255 255 / .08) 0 0),
-    var(--hs-art) !important;
+  background-image: var(--hs-art) !important;
   background-position: var(--hs-art-position) !important;
   background-size: cover !important;
   background-repeat: no-repeat !important;
@@ -483,14 +539,15 @@ html.hermes-skin-active [data-slot="aui_assistant-message-content"] {
     0 0 14px rgb(var(--hs-bg-rgb) / .50) !important;
 }
 
-/* In immersive mode the body carries the art and the
-   assistant reading cards only need a whisper of tint (text-shadow
-   does the heavy lifting there). */
+/* In immersive mode the body carries the art. Reading cards need enough
+   opacity to sit legibly over busy wallpaper regions — .16 was too
+   thin, letting petal/stone textures bleed through. .30 + blur 18
+   softens the backdrop while staying clearly glass, not opaque. */
 html.hermes-skin-active [data-slot="aui_assistant-message-root"] {
-  background: rgb(var(--hs-bg-rgb) / .08) !important;
-  border-color: rgb(var(--hs-muted-rgb) / .08) !important;
-  backdrop-filter: blur(10px) saturate(1.06) !important;
-  -webkit-backdrop-filter: blur(10px) saturate(1.06) !important;
+  background: rgb(var(--hs-bg-rgb) / .30) !important;
+  border-color: rgb(var(--hs-muted-rgb) / .14) !important;
+  backdrop-filter: blur(18px) saturate(1.08) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.08) !important;
 }
 
 /* === Thinking / reasoning disclosure ===
