@@ -636,8 +636,9 @@ private final class LauncherController: NSObject, NSApplicationDelegate {
         guard let log = try? FileHandle(forWritingTo: logURL) else { return }
         _ = try? log.seekToEnd()
 
-        // Use system Python (has websockets) or Hermes venv Python
-        let pythonBin = "/Users/bytedance/.hermes/hermes-agent/venv/bin/python3"
+        // Use Hermes venv Python (has websockets) or fall back to system python3
+        let homePython = NSHomeDirectory() + "/.hermes/hermes-agent/venv/bin/python3"
+        let pythonBin = fileManager.fileExists(atPath: homePython) ? homePython : "/usr/bin/env python3"
         let injector = root.appendingPathComponent("runtime/injector-hermes.py").path
         let themeDir = themeDirPath(for: root)
 
