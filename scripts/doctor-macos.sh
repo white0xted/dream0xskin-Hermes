@@ -42,10 +42,19 @@ CSS="$ROOT_DIR/runtime/hermes-skin.css"
 echo "  css: $(wc -c < "$CSS") bytes"
 
 echo "[check] theme"
-THEME_DIR="$ROOT_DIR/runtime/themes-hermes/linda"
-THEME_JSON="$THEME_DIR/theme.json"
-[[ -f "$THEME_JSON" ]] || { echo "Missing $THEME_JSON" >&2; exit 1; }
-echo "  theme: $(python3 -c "import json; print(json.load(open('$THEME_JSON'))['name'])")"
+THEMES_ROOT="$ROOT_DIR/runtime/themes-hermes"
+[[ -d "$THEMES_ROOT" ]] || { echo "Missing themes dir $THEMES_ROOT" >&2; exit 1; }
+COUNT=0
+for THEME_DIR in "$THEMES_ROOT"/*/; do
+  [[ -d "$THEME_DIR" ]] || continue
+  THEME_DIR="${THEME_DIR%/}"
+  THEME_JSON="$THEME_DIR/theme.json"
+  [[ -f "$THEME_JSON" ]] || { echo "Missing $THEME_JSON" >&2; exit 1; }
+  NAME=$(python3 -c "import json; print(json.load(open('$THEME_JSON'))['name'])" 2>/dev/null) || { echo "Invalid $THEME_JSON" >&2; exit 1; }
+  echo "  theme: $NAME ($(basename "$THEME_DIR"))"
+  COUNT=$((COUNT+1))
+done
+[[ "$COUNT" -gt 0 ]] || { echo "No themes found in $THEMES_ROOT" >&2; exit 1; }
 
 if (( LIVE )); then
   echo "[check] live renderer"
