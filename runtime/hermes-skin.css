@@ -234,6 +234,18 @@ html.hermes-skin-active aside[aria-label="右侧边栏"] {
   box-shadow: none !important;
 }
 
+/* === File preview pane (middle area, opens when viewing a file) ===
+   Hermes renders the preview as an ASIDE without aria-label (the right
+   file-explorer sidebar is the one WITH aria-label="右侧边栏"). Give
+   it a frosted backing close to the reading cards (.30 + blur18) so
+   markdown/file content stays legible over the wallpaper. */
+html.hermes-skin-active aside:not([aria-label]) {
+  background: rgb(var(--hs-bg-rgb) / .30) !important;
+  backdrop-filter: blur(18px) saturate(1.08) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.08) !important;
+  border-left: 1px solid rgb(var(--hs-muted-rgb) / .10) !important;
+}
+
 /* Right sidebar pane-header (tab bar with "files" label): give it a
    frosted glass strip matching the sidebar panel so the label and tab
    icons sit on readable backing, not floating over raw wallpaper.
