@@ -850,7 +850,6 @@ async def remove_from_session(session: CDPSession) -> bool:
         f'(() => {{'
         f'  const state = window.{STATE_KEY};'
         f'  if (typeof state?.cleanup === "function") {{ state.cleanup(); return "cleaned"; }}'
-        f'  // Fallback: direct DOM cleanup'
         f'  document.getElementById("{ROOT_ID}")?.remove();'
         f'  document.getElementById("{STYLE_ID}")?.remove();'
         f'  document.documentElement.classList.remove("{ACTIVE_CLASS}");'
@@ -926,12 +925,20 @@ async def run_injector(port: int, theme_dir: str, css_path: str, selectors_path:
         if not targets:
             print(f"[remove] No Hermes page targets found on port {port}")
             return
+        cleaned_any = False
         for t in targets:
             session = await connect_target(t)
-            await remove_from_session(session)
-            print(f"[remove] Cleaned: {t.get('url', '?')}")
+            ok = False
+            try:
+                ok = await remove_from_session(session)
+            except Exception as e:
+                print(f"[remove] Error cleaning {t.get('url', '?')}: {e}")
+            cleaned_any = cleaned_any or ok
+            print(f"[remove] Cleaned: {t.get('url', '?')}" if ok
+                  else f"[remove] NOT cleaned (no skin or failed): {t.get('url', '?')}")
             await session.ws.close()
-        print("[remove] Skin removed from all targets.")
+        if not cleaned_any:
+            print("[remove] Nothing to clean.")
         return
 
     # Load theme and CSS for injection
@@ -1048,16 +1055,23 @@ async def run_injector(port: int, theme_dir: str, css_path: str, selectors_path:
     # Cleanup
     print("[watch] Cleaning up sessions...")
     for tid, session in sessions.items():
-        try:
-            # Detach the persistent script with the SAME session that
-            # registered it (identifiers are session-scoped), then
-            # remove the injected DOM.
-            pid = persistent_ids.get(tid)
-            if pid:
+        # Detach the persistent script with the SAME session that
+        # registered it (identifiers are session-scoped). Failure here
+        # must NOT skip the DOM cleanup below — the skin would stay on
+        # the page and re-inject on navigation.
+        pid = persistent_ids.get(tid)
+        if pid:
+            try:
                 await session.remove_script_from_new_document(pid)
+            except Exception as e:
+                print(f"[watch] Warning: could not detach persistent script: {e}")
+        try:
             await remove_from_session(session)
+        except Exception as e:
+            print(f"[watch] Warning: could not remove skin DOM: {e}")
+        try:
             await session.ws.close()
-        except:
+        except Exception:
             pass
     print("[watch] Done.")
 
