@@ -836,7 +836,16 @@ async def inject_into_session(session: CDPSession, css_text: str, art_url,
 
 
 async def remove_from_session(session: CDPSession) -> bool:
-    """Remove skin from a CDP session."""
+    """Remove skin from a CDP session.
+
+    NOTE: this cannot detach the SPA-reload persistent script — its
+    identifier is scoped to the session that registered it, and a fresh
+    connection gets "Script not found". The watch process detaches it in
+    its own SIGTERM cleanup (persistent_ids). A --remove run therefore
+    only clears the current DOM; if a persistent script is still active
+    it will re-inject on the next navigation — restart Hermes to fully
+    reset, or use the launcher's stop which signals the injector first.
+    """
     result = await session.eval_value(
         f'(() => {{'
         f'  const state = window.{STATE_KEY};'
@@ -951,6 +960,7 @@ async def run_injector(port: int, theme_dir: str, css_path: str, selectors_path:
     # Watch mode: continuous monitoring and re-injection
     print(f"[watch] Monitoring port {port}...")
     sessions = {}  # target_id -> CDPSession
+    persistent_ids = {}  # target_id -> persistent script identifier (session-scoped!)
     stopping = False
 
     def signal_handler(sig, frame):
@@ -991,6 +1001,11 @@ async def run_injector(port: int, theme_dir: str, css_path: str, selectors_path:
                         script = build_renderer_script(css_text, art_url, theme, selectors)
                         identifier = await session.add_script_to_new_document(script)
                         print(f"[watch] Registered persistent script: {identifier[:20]}...")
+                        # The identifier is scoped to THIS session — keep it here so
+                        # cleanup can detach it with the same connection. (A fresh
+                        # connection's removeScriptToEvaluateOnNewDocument would get
+                        # "Script not found": ids are per-session.)
+                        persistent_ids[tid] = identifier
                     except Exception as e:
                         print(f"[watch] Warning: could not register persistent script: {e}")
                 else:
@@ -1034,6 +1049,12 @@ async def run_injector(port: int, theme_dir: str, css_path: str, selectors_path:
     print("[watch] Cleaning up sessions...")
     for tid, session in sessions.items():
         try:
+            # Detach the persistent script with the SAME session that
+            # registered it (identifiers are session-scoped), then
+            # remove the injected DOM.
+            pid = persistent_ids.get(tid)
+            if pid:
+                await session.remove_script_from_new_document(pid)
             await remove_from_session(session)
             await session.ws.close()
         except:
